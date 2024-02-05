@@ -1,4 +1,3 @@
-// Server.cpp
 #include <iostream>
 #include <thread>
 #include <vector>
