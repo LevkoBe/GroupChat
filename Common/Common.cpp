@@ -55,11 +55,6 @@ std::string Common::receiveChunkedData(SOCKET clientSocket)
         return "";
     }
 
-    m.lock();
-    std::cout << "[-+-+-+-+-+-+-+-+-+-+ Chunk size received: " << chunkSize << std::endl;
-    std::cout << "[+-+-+-+-+-+-+-+-+-+- Total size received: " << totalSize << std::endl;
-    m.unlock();
-
     // Receive message
     std::string assembledData;
     int totalReceived = 0;
@@ -81,9 +76,6 @@ std::string Common::receiveChunkedData(SOCKET clientSocket)
         totalReceived += bytesReceived;
     }
 
-    m.lock();
-    std::cout << "[-+-+-+-+-+-+-+-+-+-+ Assembled data:\n" << assembledData << std::endl;
-    m.unlock();
     delete[] buffer;
     return assembledData;
 }
@@ -93,11 +85,6 @@ char Common::receiveOptionType(SOCKET clientSocket) {
     int bytesReceived = recv(clientSocket, reinterpret_cast<char*>(&option), sizeof(char), 0);
     if (bytesReceived == SOCKET_ERROR) {
         return '-';
-    }
-    if (bytesReceived > 0) {
-        m.lock();
-        std::cout << "[-+-+-+-+-+-+-+-+-+-+ Received data: " << option << " +-+-+-+-+-+-+-+-+-+-]"<< std::endl;
-        m.unlock();
     }
     return option;
 }
