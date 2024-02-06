@@ -2,19 +2,18 @@
 #include <iostream>
 #include <thread>
 #include <string>
-#include <winsock2.h>
+#include <WinSock2.h>
 #include <Ws2tcpip.h>
+#include "Common.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
 class Client {
-    WSADATA wsaData;
-    sockaddr_in serverAddr;
 public:
-    SOCKET clientSocket;
+    SOCKET clientSocket = 0;
 
-    Client() {
-        //WSADATA wsaData;
+    Client() { // todo
+        WSADATA wsaData;
         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
             std::cerr << "WSAStartup failed.\n";
             return;
@@ -27,7 +26,7 @@ public:
             return;
         }
 
-        //sockaddr_in serverAddr;
+        sockaddr_in serverAddr;
         serverAddr.sin_family = AF_INET;
         InetPton(AF_INET, L"127.0.0.1", &serverAddr.sin_addr);
         serverAddr.sin_port = htons(8080);
@@ -38,6 +37,14 @@ public:
             WSACleanup();
             return;
         }
+    }
+
+    void sendMessage(const char operationType, const std::string& message) {
+        Common::sendChunkedData(clientSocket, operationType, message, 100);
+    }
+
+    void receiveMessage() {
+        Common::receiveChunkedData(clientSocket);
     }
 
     ~Client() {

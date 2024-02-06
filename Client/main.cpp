@@ -1,7 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <string>
-#include <winsock2.h>
+#include <WinSock2.h>
 #include <Ws2tcpip.h>
 #include "Client.h"
 #include "Common.h"
@@ -34,8 +34,7 @@ int main() {
     std::string message;
     while (true) {
         std::getline(std::cin, message);
-        send(clientSocket, message.c_str(), message.size() + 1, 0);
-        Common::SendChunkedData();
+        client.sendMessage('m', message);
     }
     receiveThread.join();
 
