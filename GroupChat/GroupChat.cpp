@@ -11,7 +11,7 @@ void handleClient(SOCKET clientSocket) {
 
 int main() {
 
-    while (server.serverSocket) {
+    while (server.serverSocket) { // connecting new clients
         SOCKET clientSocket = accept(server.serverSocket, nullptr, nullptr);
         if (clientSocket == INVALID_SOCKET) {
             Common::errorMessage("Accept failed.\n");
@@ -22,10 +22,7 @@ int main() {
 
         std::lock_guard<std::mutex> lock(consoleMutex);
         std::cout << "Client " << clientSocket << " connected.\n";
-
         clients.emplace_back(handleClient, clientSocket);
-        //std::thread clientThread(handleClient, clientSocket);
-        //clientThread.detach(); // ?
     }
     for (auto& client : clients) {
         client.join();

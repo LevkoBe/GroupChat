@@ -69,6 +69,7 @@ void Server::handleClient(SOCKET clientSocket, std::mutex& consoleMutex) {
         case '-':
         default:
             std::lock_guard<std::mutex> lock(consoleMutex);
+            Common::sendChunkedData(clientSocket, '-', "Thank you for being with us!", 100);
             std::cout << "Client " << clientSocket << " disconnected.\n";
             closesocket(clientSocket);
             return;

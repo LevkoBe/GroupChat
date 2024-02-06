@@ -2,36 +2,29 @@
 #include "Common.h"
 #include <thread>
 
+Client client;
 
 void receiveMessages(SOCKET clientSocket) {
-    char buffer[4096];
-    while (true) {
-        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
-        if (bytesReceived <= 0) {
-            std::cerr << "Server disconnected.\n";
-            break;
-        }
-
-        buffer[bytesReceived] = '\0';
-        std::cout << "Server: " << buffer << std::endl;
-    }
+    client.receiveMessages(clientSocket);
 }
 
 int main() {
-    Client client;
     SOCKET clientSocket = client.clientSocket;
     std::cout << "Connected to server.\n";
-
 
     std::thread receiveThread(receiveMessages, clientSocket);
 
     std::string message;
     while (true) {
         std::getline(std::cin, message);
-        client.sendMessage('m', message);
+        if (message == "   " || message == "stop" || !client.sendMessage('m', message)) {
+            client.sendMessage('-', message);
+            std::cout << client.receiveMessage();
+            break;
+        }
     }
-    receiveThread.join();
 
+    receiveThread.join();
     return 0;
 }
 

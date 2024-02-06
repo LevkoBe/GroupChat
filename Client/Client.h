@@ -12,9 +12,11 @@ public:
 
     Client();
 
-    void sendMessage(const char operationType, const std::string& message);
+    bool sendMessage(const char operationType, const std::string& message);
 
-    void receiveMessage();
+    std::string receiveMessage();
+
+    void receiveMessages(SOCKET clientSocket);
 
     ~Client();
 };

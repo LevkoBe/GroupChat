@@ -28,12 +28,33 @@ Client::Client() { // todo
     }
 }
 
-void Client::sendMessage(const char operationType, const std::string& message) {
-    Common::sendChunkedData(clientSocket, operationType, message, 100);
+bool Client::sendMessage(const char operationType, const std::string& message) {
+    return Common::sendChunkedData(clientSocket, operationType, message, 100);
 }
 
-void Client::receiveMessage() {
-    Common::receiveChunkedData(clientSocket);
+std::string Client::receiveMessage() {
+    return Common::receiveChunkedData(clientSocket);
+}
+
+void Client::receiveMessages(SOCKET clientSocket) {
+    std::string message;
+    while (true) {
+        char option = Common::receiveOptionType(clientSocket);
+        switch (option) {
+        case 'm':
+            message = Common::receiveChunkedData(clientSocket);
+            std::cout << "Server: " << message << std::endl;
+            break;
+        case 'f':
+            message = Common::receiveChunkedData(clientSocket);
+            std::cout << "Server: " << message << std::endl;
+            break;
+        default:
+            std::cerr << "Server disconnected.\n";
+            return;
+            break; ///
+        }
+    }
 }
 
 Client::~Client() {
