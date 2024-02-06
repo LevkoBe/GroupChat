@@ -1,6 +1,5 @@
 #pragma once
 #include <iostream>
-#include <thread>
 #include <string>
 #include <Ws2tcpip.h>
 #include "Common.h"

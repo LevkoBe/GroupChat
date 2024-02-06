@@ -4,9 +4,8 @@
 std::mutex m;
 
 bool Common::errorMessage(const std::string& message) {
-    m.lock();
+    std::lock_guard<std::mutex> lock(m);
     std::cerr << message << std::endl;
-    m.unlock();
     return false;
 }
 

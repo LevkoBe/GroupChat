@@ -1,5 +1,4 @@
 #include "Server.h"
-#include <thread>
 
 Server::Server() {
     WSADATA wsaData;
@@ -50,21 +49,33 @@ void Server::broadcastMessage(const std::string& message, SOCKET senderSocket, s
 
 void Server::handleClient(SOCKET clientSocket, std::mutex& consoleMutex) {
     clients.push_back(clientSocket);
+    std::string message;
 
     while (true) {
         char method = Common::receiveOptionType(clientSocket);
-
-        if (method == '-' || !method) {
-            std::lock_guard<std::mutex> lock(consoleMutex); // todo: implement in other places
+        switch (method) {
+        case 'm':
+            message = Common::receiveChunkedData(clientSocket);
+            broadcastMessage(message, clientSocket, consoleMutex);
+            break;
+        case 'f':
+            break;
+        case 'a':
+            break;
+        case 'g':
+            break;
+        case 'x':
+            break;
+        case '-':
+        default:
+            std::lock_guard<std::mutex> lock(consoleMutex);
             std::cout << "Client " << clientSocket << " disconnected.\n";
+            closesocket(clientSocket);
+            return;
             break;
         }
-        std::string message = Common::receiveChunkedData(clientSocket);
-
-        broadcastMessage(message, clientSocket, consoleMutex);
     }
 
-    closesocket(clientSocket);
 }
 
 Server::~Server() {

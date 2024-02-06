@@ -1,10 +1,9 @@
 #include "Server.h"
+#pragma comment(lib, "ws2_32.lib")
 
 Server server;
-
-#pragma comment(lib, "ws2_32.lib")
 std::mutex consoleMutex;
-std::vector<SOCKET> clients;
+std::vector<std::thread> clients;
 
 void handleClient(SOCKET clientSocket) {
     server.handleClient(clientSocket, consoleMutex);
@@ -12,20 +11,24 @@ void handleClient(SOCKET clientSocket) {
 
 int main() {
 
-    while (server.serverSocket) { // ?
+    while (server.serverSocket) {
         SOCKET clientSocket = accept(server.serverSocket, nullptr, nullptr);
         if (clientSocket == INVALID_SOCKET) {
             Common::errorMessage("Accept failed.\n");
             closesocket(server.serverSocket);
             WSACleanup();
-            return 1;
+            break;
         }
 
-        std::lock_guard<std::mutex> lock(consoleMutex); // ?
+        std::lock_guard<std::mutex> lock(consoleMutex);
         std::cout << "Client " << clientSocket << " connected.\n";
 
-        std::thread clientThread(handleClient, clientSocket);
-        clientThread.detach(); // Detach the thread to allow handling multiple clients concurrently // ???
+        clients.emplace_back(handleClient, clientSocket);
+        //std::thread clientThread(handleClient, clientSocket);
+        //clientThread.detach(); // ?
+    }
+    for (auto& client : clients) {
+        client.join();
     }
 
     return 0;
