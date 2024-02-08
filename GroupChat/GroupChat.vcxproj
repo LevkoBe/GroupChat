@@ -132,10 +132,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GroupChat.cpp" />
+    <ClCompile Include="Message.cpp" />
+    <ClCompile Include="Room.cpp" />
     <ClCompile Include="Server.cpp" />
+    <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Message.h" />
+    <ClInclude Include="MessageType.h" />
+    <ClInclude Include="Room.h" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="User.h" />
+    <ClInclude Include="UserState.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.vcxproj">

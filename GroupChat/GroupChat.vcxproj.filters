@@ -21,9 +21,33 @@
     <ClCompile Include="Server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Message.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Message.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UserState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Room.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
