@@ -11,8 +11,8 @@ namespace fs = std::filesystem;
 struct Room {
     std::string password;
     std::string groupName;
-    std::vector<User> users;
-    std::vector<Message> messageHistory;
+    std::vector<std::string> messageHistory = std::vector<std::string>();
+    std::vector<std::shared_ptr<User>> users = std::vector<std::shared_ptr<User>>();
 
     Room(std::string groupName, std::string password = "") : groupName(groupName), password(password) {
         std::string folderPath = "serverFolder/" + groupName;

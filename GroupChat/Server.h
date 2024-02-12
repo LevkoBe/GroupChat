@@ -15,9 +15,9 @@ class Server {
 
     bool tryParseInt(const std::string& s, int& result);
 
-    void addUser(User& user, Room& room, SOCKET clientSocket);
+    void addUser(std::shared_ptr <User> user, std::shared_ptr<Room> room, SOCKET clientSocket);
 
-    void receiveMessages(User& user, std::mutex& consoleMutex);
+    void receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMutex);
 
     std::shared_ptr<Room> roomByString(std::string& roomString);
 public:
@@ -27,11 +27,11 @@ public:
 
     Server();
 
-    void broadcastMessage(const std::string& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room);
+    void broadcastMessage(const Message& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room);
 
     void handleClient(SOCKET clientSocket, std::mutex& consoleMutex);
 
-    User registerClient(SOCKET clientSocket);
+    std::shared_ptr<User> registerClient(SOCKET clientSocket);
 
     void clientMessaging(SOCKET clientSocket);
 

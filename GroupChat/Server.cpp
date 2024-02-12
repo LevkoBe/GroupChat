@@ -37,16 +37,17 @@ Server::Server() {
     std::cout << "Server is listening on port 8080...\n";
 }
 
-void Server::broadcastMessage(const std::string& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room) {
-    std::lock_guard<std::mutex> lock(consoleMutex);
-    std::cout << "Client " << senderSocket << ": " << message << std::endl;
+void Server::broadcastMessage(const Message& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room) {
 
-    for (User& user : room->users) {
-        SOCKET client = user.clientSocket;
+    room->messageHistory.push_back(message.toStr());
+    for (std::shared_ptr<User> user : room->users) {
+        SOCKET client = user->clientSocket;
         if (client != senderSocket) {
-            Common::sendChunkedData(client, 'm', message, 100);
+            Common::sendChunkedData(client, 'm', message.toStr(), 100);
         }
     }
+    std::lock_guard<std::mutex> lock(consoleMutex);
+    std::cout << "Client " << senderSocket << ": " << message << std::endl;
 }
 
 std::shared_ptr<Room> Server::roomByString(std::string& roomString) {
@@ -61,26 +62,25 @@ std::shared_ptr<Room> Server::roomByString(std::string& roomString) {
 void Server::handleClient(SOCKET clientSocket, std::mutex& consoleMutex) {
     clients.push_back(clientSocket);
     
-    User user = registerClient(clientSocket); // put the user into a group
+    std::shared_ptr<User> user = registerClient(clientSocket); // put the user into a group
     {
         std::lock_guard<std::mutex> lock(consoleMutex);
         std::cout << "Client " << clientSocket << " added to a group.\n";
     }
     receiveMessages(user, consoleMutex);
-
 }
 
-void Server::receiveMessages(User& user, std::mutex& consoleMutex) {
+void Server::receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMutex) {
     std::string message;
-    Common::sendChunkedData(user.clientSocket, 'm', ("You've been added successfully to the group '" + user.room + "'.\n"));
-    std::shared_ptr<Room> room = roomByString(user.room);
-
+    std::shared_ptr<Room> room = roomByString(user->room);
+    std::unique_ptr<Message> userMessage = std::make_unique<Message>();
     while (true) {
-        char method = Common::receiveOptionType(user.clientSocket);
+        char method = Common::receiveOptionType(user->clientSocket);
         switch (method) {
         case 'm':
-            message = Common::receiveChunkedData(user.clientSocket);
-            broadcastMessage(message, user.clientSocket, consoleMutex, room);
+            message = Common::receiveChunkedData(user->clientSocket);
+            *userMessage = Message(message, user->username, user->room);
+            broadcastMessage(*userMessage, user->clientSocket, consoleMutex, room);
             break;
         case 'f':
             break;
@@ -93,9 +93,9 @@ void Server::receiveMessages(User& user, std::mutex& consoleMutex) {
         case '-':
         default:
             std::lock_guard<std::mutex> lock(consoleMutex);
-            Common::sendChunkedData(user.clientSocket, '-', "Thank you for being with us!", 100);
-            std::cout << "Client " << user.clientSocket << " disconnected.\n";
-            closesocket(user.clientSocket);
+            Common::sendChunkedData(user->clientSocket, '-', "Thank you for being with us!", 100);
+            std::cout << "Client " << user->clientSocket << " disconnected.\n";
+            closesocket(user->clientSocket);
             return;
             break;
         }
@@ -140,19 +140,20 @@ bool Server::tryParseInt(const std::string& s, int& result) {
     return false;
 }
 
-void Server::addUser(User& user, Room& room, SOCKET clientSocket) {
-    room.users.push_back(user);
-    user.room = room.groupName;
-    for (auto& message : room.messageHistory) {
-        Common::sendChunkedData(clientSocket, 'm', message.message);
+void Server::addUser(std::shared_ptr<User> user, std::shared_ptr<Room> room, SOCKET clientSocket) {
+    room->users.push_back(user);
+    user->room = room->groupName;
+    Common::sendChunkedData(user->clientSocket, 'm', ("You've been added successfully to the group '" + user->room + "'.\n"));
+    for (auto& message : room->messageHistory) {
+        Common::sendChunkedData(clientSocket, 'm', message);
     }
 }
 
-User Server::registerClient(SOCKET clientSocket) {
+std::shared_ptr<User> Server::registerClient(SOCKET clientSocket) {
     Common::sendChunkedData(clientSocket, 'm', "Please, enter your name to connect to the server");
     Common::receiveOptionType(clientSocket);
     std::string username = Common::receiveChunkedData(clientSocket);
-    User user(username, clientSocket);
+    std::shared_ptr<User> user = std::make_shared<User>(username, clientSocket);
 
     std::string message = invitingMessage(username); // ask for room name
     Common::sendChunkedData(clientSocket, 'm', message);
@@ -165,7 +166,7 @@ User Server::registerClient(SOCKET clientSocket) {
         std::shared_ptr<Room> room = std::make_shared<Room>(message);
         rooms.push_back(room);
     }
-    addUser(user, *rooms[index], clientSocket);
+    addUser(user, rooms[index], clientSocket);
     return user;
 }
 

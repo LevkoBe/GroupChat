@@ -43,11 +43,11 @@ void Client::receiveMessages(SOCKET clientSocket) {
         switch (option) {
         case 'm':
             message = Common::receiveChunkedData(clientSocket);
-            std::cout << "Server: " << message << std::endl;
+            std::cout << message << std::endl;
             break;
         case 'f':
             message = Common::receiveChunkedData(clientSocket);
-            std::cout << "Server: " << message << std::endl;
+            std::cout << message << std::endl;
             break;
         default:
             std::cerr << "Server disconnected.\n";
