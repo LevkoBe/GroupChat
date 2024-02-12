@@ -12,9 +12,11 @@ int main() {
     SOCKET clientSocket = client.clientSocket;
     std::cout << "Connected to server.\n";
 
+    std::cout << "Authorization started...\n";
+    std::string message;
+
     std::thread receiveThread(receiveMessages, clientSocket);
 
-    std::string message;
     while (true) {
         std::getline(std::cin, message);
         if (message == "   " || message == "stop" || !client.sendMessage('m', message)) {

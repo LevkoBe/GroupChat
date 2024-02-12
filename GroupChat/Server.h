@@ -15,19 +15,19 @@ class Server {
 
     bool tryParseInt(const std::string& s, int& result);
 
-    void addUser(User user, Room& room, SOCKET clientSocket);
+    void addUser(User& user, Room& room, SOCKET clientSocket);
 
     void receiveMessages(User& user, std::mutex& consoleMutex);
 
-    Room roomByString(std::string& roomString);
+    std::shared_ptr<Room> roomByString(std::string& roomString);
 public:
     SOCKET serverSocket = 0;
     std::vector<SOCKET> clients;
-    std::vector<Room> rooms;
+    std::vector<std::shared_ptr<Room>> rooms;
 
     Server();
 
-    void broadcastMessage(const std::string& message, SOCKET senderSocket, std::mutex& consoleMutex, Room& room);
+    void broadcastMessage(const std::string& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room);
 
     void handleClient(SOCKET clientSocket, std::mutex& consoleMutex);
 

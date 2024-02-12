@@ -37,11 +37,11 @@ Server::Server() {
     std::cout << "Server is listening on port 8080...\n";
 }
 
-void Server::broadcastMessage(const std::string& message, SOCKET senderSocket, std::mutex& consoleMutex, Room& room) {
+void Server::broadcastMessage(const std::string& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room) {
     std::lock_guard<std::mutex> lock(consoleMutex);
     std::cout << "Client " << senderSocket << ": " << message << std::endl;
 
-    for (User& user : room.users) {
+    for (User& user : room->users) {
         SOCKET client = user.clientSocket;
         if (client != senderSocket) {
             Common::sendChunkedData(client, 'm', message, 100);
@@ -49,14 +49,13 @@ void Server::broadcastMessage(const std::string& message, SOCKET senderSocket, s
     }
 }
 
-Room Server::roomByString(std::string& roomString) {
+std::shared_ptr<Room> Server::roomByString(std::string& roomString) {
     for (auto& room : rooms) {
-        if (room.groupName == roomString) {
+        if (room->groupName == roomString) {
             return room;
         }
     }
-    std::cerr << "Room not found!";
-    return Room("Room not found");
+    return nullptr;
 }
 
 void Server::handleClient(SOCKET clientSocket, std::mutex& consoleMutex) {
@@ -73,7 +72,8 @@ void Server::handleClient(SOCKET clientSocket, std::mutex& consoleMutex) {
 
 void Server::receiveMessages(User& user, std::mutex& consoleMutex) {
     std::string message;
-    Room room = roomByString(user.room);
+    Common::sendChunkedData(user.clientSocket, 'm', ("You've been added successfully to the group '" + user.room + "'.\n"));
+    std::shared_ptr<Room> room = roomByString(user.room);
 
     while (true) {
         char method = Common::receiveOptionType(user.clientSocket);
@@ -117,11 +117,11 @@ std::string Server::invitingMessage(std::string& username) {
         break;
     }
     for (int i = 0; i < rooms.size(); i++) {
-        if (rooms[i].password != "") {
-            message += "[" + std::to_string(i) + ". " + rooms[i].groupName + "]\n";
+        if (rooms[i]->password != "") {
+            message += "[" + std::to_string(i + 1) + ". " + rooms[i]->groupName + "]\n";
         }
         else {
-            message += std::to_string(i) + ". " + rooms[i].groupName + "\n";
+            message += std::to_string(i + 1) + ". " + rooms[i]->groupName + "\n";
         }
     }
     message += "(square brackets represent private groups with a need to provide password)\n";
@@ -134,13 +134,13 @@ std::string Server::invitingMessage(std::string& username) {
 bool Server::tryParseInt(const std::string& s, int& result) {
     std::istringstream iss(s);
     char leftover;
-    if (iss >> result && !(iss >> leftover) && std::isspace(iss.peek())) {
+    if (iss >> result && !(iss >> leftover)) {
         return true;
     }
     return false;
 }
 
-void Server::addUser(User user, Room& room, SOCKET clientSocket) {
+void Server::addUser(User& user, Room& room, SOCKET clientSocket) {
     room.users.push_back(user);
     user.room = room.groupName;
     for (auto& message : room.messageHistory) {
@@ -149,7 +149,6 @@ void Server::addUser(User user, Room& room, SOCKET clientSocket) {
 }
 
 User Server::registerClient(SOCKET clientSocket) {
-
     Common::sendChunkedData(clientSocket, 'm', "Please, enter your name to connect to the server");
     Common::receiveOptionType(clientSocket);
     std::string username = Common::receiveChunkedData(clientSocket);
@@ -163,9 +162,10 @@ User Server::registerClient(SOCKET clientSocket) {
     int index;
     if (!tryParseInt(message, index) || index-- > rooms.size() || index < 0) {
         index = rooms.size();
-        rooms.push_back(Room(message));
+        std::shared_ptr<Room> room = std::make_shared<Room>(message);
+        rooms.push_back(room);
     }
-    addUser(std::move(user), rooms[index], clientSocket);
+    addUser(user, *rooms[index], clientSocket);
     return user;
 }
 
