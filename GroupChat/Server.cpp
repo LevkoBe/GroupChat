@@ -1,6 +1,7 @@
 #include "Server.h"
 #include "User.h"
 
+// public
 Server::Server() {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -37,28 +38,6 @@ Server::Server() {
     std::cout << "Server is listening on port 8080...\n";
 }
 
-void Server::broadcastMessage(const Message& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room) {
-
-    room->messageHistory.push_back(message.toStr());
-    for (std::shared_ptr<User> user : room->users) {
-        SOCKET client = user->clientSocket;
-        if (client != senderSocket) {
-            Common::sendChunkedData(client, 'm', message.toStr(), 100);
-        }
-    }
-    std::lock_guard<std::mutex> lock(consoleMutex);
-    std::cout << "Client " << senderSocket << ": " << message << std::endl;
-}
-
-std::shared_ptr<Room> Server::roomByString(std::string& roomString) {
-    for (auto& room : rooms) {
-        if (room->groupName == roomString) {
-            return room;
-        }
-    }
-    return nullptr;
-}
-
 void Server::handleClient(SOCKET clientSocket, std::mutex& consoleMutex) {
     clients.push_back(clientSocket);
     
@@ -70,38 +49,13 @@ void Server::handleClient(SOCKET clientSocket, std::mutex& consoleMutex) {
     receiveMessages(user, consoleMutex);
 }
 
-void Server::receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMutex) {
-    std::string message;
-    std::shared_ptr<Room> room = roomByString(user->room);
-    std::unique_ptr<Message> userMessage = std::make_unique<Message>();
-    while (true) {
-        char method = Common::receiveOptionType(user->clientSocket);
-        switch (method) {
-        case 'm':
-            message = Common::receiveChunkedData(user->clientSocket);
-            *userMessage = Message(message, user->username, user->room);
-            broadcastMessage(*userMessage, user->clientSocket, consoleMutex, room);
-            break;
-        case 'f':
-            break;
-        case 'a':
-            break;
-        case 'g':
-            break;
-        case 'x':
-            break;
-        case '-':
-        default:
-            std::lock_guard<std::mutex> lock(consoleMutex);
-            Common::sendChunkedData(user->clientSocket, '-', "Thank you for being with us!", 100);
-            std::cout << "Client " << user->clientSocket << " disconnected.\n";
-            closesocket(user->clientSocket);
-            return;
-            break;
-        }
-    }
+Server::~Server() {
+    closesocket(serverSocket);
+    WSACleanup();
 }
 
+
+// helpers
 std::string Server::invitingMessage(const std::string& username) {
 
     std::string message = "Hi, " + username + "!\n";
@@ -140,16 +94,64 @@ bool Server::tryParseInt(const std::string& s, int& result) {
     return false;
 }
 
-void Server::addUser(std::shared_ptr<User> user, std::shared_ptr<Room> room, SOCKET clientSocket) {
-    room->users.push_back(user);
-    user->room = room->groupName;
-    Common::sendChunkedData(user->clientSocket, 'm', ("You've been added successfully to the group '" + user->room + "'.\n"));
-    for (auto& message : room->messageHistory) {
-        Common::sendChunkedData(clientSocket, 'm', message);
+std::shared_ptr<Room> Server::roomByString(std::string& roomString) {
+    for (auto& room : rooms) {
+        if (room->groupName == roomString) {
+            return room;
+        }
     }
-    Common::sendChunkedData(clientSocket, 'h', "    You joined this group   ");
+    return nullptr;
 }
 
+
+// messaging
+void Server::receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMutex) {
+    std::string message;
+    std::shared_ptr<Room> room = roomByString(user->room);
+    std::unique_ptr<Message> userMessage = std::make_unique<Message>();
+    while (true) {
+        char method = Common::receiveOptionType(user->clientSocket);
+        switch (method) {
+        case 'm':
+            message = Common::receiveChunkedData(user->clientSocket);
+            *userMessage = Message(message, user->username, user->room);
+            broadcastMessage(*userMessage, user->clientSocket, consoleMutex, room);
+            break;
+        case 'f':
+            break;
+        case 'a':
+            break;
+        case 'g':
+            break;
+        case 'x':
+            break;
+        case '-':
+        default:
+            std::lock_guard<std::mutex> lock(consoleMutex);
+            Common::sendChunkedData(user->clientSocket, '-', "Thank you for being with us!", 100);
+            std::cout << "Client " << user->clientSocket << " disconnected.\n";
+            closesocket(user->clientSocket);
+            return;
+            break;
+        }
+    }
+}
+
+void Server::broadcastMessage(const Message& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room) {
+
+    room->messageHistory.push_back(message.toStr());
+    for (std::shared_ptr<User> user : room->users) {
+        SOCKET client = user->clientSocket;
+        if (client != senderSocket) {
+            Common::sendChunkedData(client, 'm', message.toStr(), 100);
+        }
+    }
+    std::lock_guard<std::mutex> lock(consoleMutex);
+    std::cout << "Client " << senderSocket << ": " << message << std::endl;
+}
+
+
+// registration
 std::shared_ptr<User> Server::registerClient(SOCKET clientSocket) {
     int index;
 
@@ -174,13 +176,14 @@ std::shared_ptr<User> Server::registerClient(SOCKET clientSocket) {
     return user;
 }
 
-void Server::clientMessaging(SOCKET clientSocket)
-{
-}
-
-Server::~Server() {
-    closesocket(serverSocket);
-    WSACleanup();
+void Server::addUser(std::shared_ptr<User> user, std::shared_ptr<Room> room, SOCKET clientSocket) {
+    room->users.push_back(user);
+    user->room = room->groupName;
+    Common::sendChunkedData(user->clientSocket, 'm', ("You've been added successfully to the group '" + user->room + "'.\n"));
+    for (auto& message : room->messageHistory) {
+        Common::sendChunkedData(clientSocket, 'm', message);
+    }
+    Common::sendChunkedData(clientSocket, 'h', "    You joined this group   ");
 }
 
 std::string Server::askForPassword(SOCKET clientSocket, int index) {

@@ -11,15 +11,23 @@
 
 class Server {
 
+    // helpers
     std::string invitingMessage(const std::string& username);
-
     bool tryParseInt(const std::string& s, int& result);
+    std::shared_ptr<Room> roomByString(std::string& roomString);
 
+    // registration
+    std::shared_ptr<User> registerClient(SOCKET clientSocket);
     void addUser(std::shared_ptr <User> user, std::shared_ptr<Room> room, SOCKET clientSocket);
 
-    void receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMutex);
+    std::string askForPassword(SOCKET clientSocket, int index = -1);
+    std::string askForUsername(SOCKET clientSocket);
+    std::string askForGroupname(SOCKET clientSocket, const std::string& username);
 
-    std::shared_ptr<Room> roomByString(std::string& roomString);
+    // messaging
+    void receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMutex);
+    void broadcastMessage(const Message& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room);
+
 public:
     SOCKET serverSocket = 0;
     std::vector<SOCKET> clients;
@@ -27,19 +35,7 @@ public:
 
     Server();
 
-    void broadcastMessage(const Message& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room);
-
     void handleClient(SOCKET clientSocket, std::mutex& consoleMutex);
-
-    std::shared_ptr<User> registerClient(SOCKET clientSocket);
-
-    void clientMessaging(SOCKET clientSocket);
-
-    std::string askForPassword(SOCKET clientSocket, int index = -1);
-
-    std::string askForUsername(SOCKET clientSocket);
-
-    std::string askForGroupname(SOCKET clientSocket, const std::string& username);
 
     ~Server();
 };
