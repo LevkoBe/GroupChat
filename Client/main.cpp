@@ -8,10 +8,7 @@ void receiveMessages() {
     client.receiveMessages();
 }
 
-int main() {
-    SOCKET clientSocket = client.clientSocket;
-    std::cout << "Connected to server.\n";
-
+void authorization() {
     std::cout << "Authorization started...\n";
     std::string message;
 
@@ -26,10 +23,26 @@ int main() {
         }
     }
 
+    system("cls");
+}
+
+int main() {
+    SOCKET clientSocket = client.clientSocket;
+    std::cout << "Connected to server.\n";
+
+    authorization();
+    std::cout << client.receiveMessage() << std::endl; // group admission
+
+    client.receiveHistory();
+
     std::thread receiveThread(receiveMessages);
 
+    std::string message;
+    client.print("", 0);
     while (true) {
         std::getline(std::cin, message);
+        client.print("You: " + message);
+
         if (message == "   " || message == "stop" || !client.sendMessage('m', message)) {
             client.sendMessage('-', message);
             std::cout << client.receiveMessage();

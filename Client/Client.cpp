@@ -1,5 +1,7 @@
 #include "Client.h"
+#include <mutex>
 
+std::mutex consoleMutex;
 
 Client::Client() { // todo
     WSADATA wsaData;
@@ -35,22 +37,37 @@ bool Client::sendMessage(const char operationType, const std::string& message) {
 
 std::string Client::receiveMessage() {
     Common::receiveOptionType(clientSocket);
-    std::string received = Common::receiveChunkedData(clientSocket);
-    return received;
+    std::string message = Common::receiveChunkedData(clientSocket);
+    return message;
+}
+
+void Client::receiveHistory() {
+    char option;// = Common::receiveOptionType(clientSocket);
+    std::string message;
+    //while (option != 'h') {
+    //    message = Common::receiveChunkedData(clientSocket);
+    //    std::cout << message << std::endl;
+    //    option = Common::receiveOptionType(clientSocket);
+    //}
+    do {
+        option = Common::receiveOptionType(clientSocket);
+        message = Common::receiveChunkedData(clientSocket);
+        std::cout << message << std::endl;
+    } while (option != 'h');
+    //Common::receiveChunkedData(clientSocket);
 }
 
 void Client::receiveMessages() {
     std::string message;
     while (true) {
         char option = Common::receiveOptionType(clientSocket);
+        message = Common::receiveChunkedData(clientSocket);
         switch (option) {
         case 'm':
-            message = Common::receiveChunkedData(clientSocket);
-            std::cout << message << std::endl;
+            print(message, 2);
             break;
         case 'f':
-            message = Common::receiveChunkedData(clientSocket);
-            std::cout << message << std::endl;
+            print(message, 2);
             break;
         default:
             std::cerr << "Server disconnected.\n";
@@ -58,6 +75,20 @@ void Client::receiveMessages() {
             break; ///
         }
     }
+}
+
+void Client::print(const std::string& output, int numLines) {
+    std::lock_guard<std::mutex> lock(consoleMutex);
+    for (int i = 0; i < numLines; i++) clearLastLine();
+
+    std::cout << output << std::endl;
+    std::cout << "------------------------------------------------------------------------------------------\n";
+    std::cout << "Type : save(to download a file), file(to send a file) or just a message.Then hit ENTER.\n";
+    std::cout << "SEND : ";
+}
+
+void Client::clearLastLine() {
+    std::cout << "\x1b[1A\x1b[2K";
 }
 
 Client::~Client() {

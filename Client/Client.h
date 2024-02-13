@@ -16,7 +16,13 @@ public:
 
     std::string receiveMessage();
 
+    void receiveHistory();
+
     void receiveMessages();
+
+    void print(const std::string& output, int numLines = 3);
+
+    void clearLastLine();
 
     ~Client();
 };

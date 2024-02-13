@@ -147,6 +147,7 @@ void Server::addUser(std::shared_ptr<User> user, std::shared_ptr<Room> room, SOC
     for (auto& message : room->messageHistory) {
         Common::sendChunkedData(clientSocket, 'm', message);
     }
+    Common::sendChunkedData(clientSocket, 'h', "    You joined this group   ");
 }
 
 std::shared_ptr<User> Server::registerClient(SOCKET clientSocket) {
@@ -194,7 +195,7 @@ std::string Server::askForPassword(SOCKET clientSocket, int index) {
     message = "Please, enter the password to the group.";
     
     if (rooms[index]->password == "-") {
-        Common::sendChunkedData(clientSocket, '-', "Password not required.");
+        Common::sendChunkedData(clientSocket, '-', "-");
         return "-";
     }
     Common::sendChunkedData(clientSocket, 'm', "Please, enter the password: ");
