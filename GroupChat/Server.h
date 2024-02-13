@@ -11,7 +11,7 @@
 
 class Server {
 
-    std::string invitingMessage(std::string& username);
+    std::string invitingMessage(const std::string& username);
 
     bool tryParseInt(const std::string& s, int& result);
 
@@ -34,6 +34,12 @@ public:
     std::shared_ptr<User> registerClient(SOCKET clientSocket);
 
     void clientMessaging(SOCKET clientSocket);
+
+    std::string askForPassword(SOCKET clientSocket, int index = -1);
+
+    std::string askForUsername(SOCKET clientSocket);
+
+    std::string askForGroupname(SOCKET clientSocket, const std::string& username);
 
     ~Server();
 };

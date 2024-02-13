@@ -29,14 +29,17 @@ Client::Client() { // todo
 }
 
 bool Client::sendMessage(const char operationType, const std::string& message) {
-    return Common::sendChunkedData(clientSocket, operationType, message, 100);
+    bool result = Common::sendChunkedData(clientSocket, operationType, message, 100);
+    return result;
 }
 
 std::string Client::receiveMessage() {
-    return Common::receiveChunkedData(clientSocket);
+    Common::receiveOptionType(clientSocket);
+    std::string received = Common::receiveChunkedData(clientSocket);
+    return received;
 }
 
-void Client::receiveMessages(SOCKET clientSocket) {
+void Client::receiveMessages() {
     std::string message;
     while (true) {
         char option = Common::receiveOptionType(clientSocket);

@@ -4,8 +4,8 @@
 
 Client client;
 
-void receiveMessages(SOCKET clientSocket) {
-    client.receiveMessages(clientSocket);
+void receiveMessages() {
+    client.receiveMessages();
 }
 
 int main() {
@@ -15,7 +15,18 @@ int main() {
     std::cout << "Authorization started...\n";
     std::string message;
 
-    std::thread receiveThread(receiveMessages, clientSocket);
+    // reading and sending USERNAME, GROUPNAME, and PASSWORD
+    for (int i = 0; i < 3; i++) {
+        std::string received = client.receiveMessage();
+        std::cout << received << std::endl; // server's invitation
+
+        if (received != "-") { // if password required
+            std::getline(std::cin, message);
+            client.sendMessage('m', message);
+        }
+    }
+
+    std::thread receiveThread(receiveMessages);
 
     while (true) {
         std::getline(std::cin, message);

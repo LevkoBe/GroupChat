@@ -11,10 +11,11 @@ namespace fs = std::filesystem;
 struct Room {
     std::string password;
     std::string groupName;
+    std::shared_ptr<User> admin = nullptr;
     std::vector<std::string> messageHistory = std::vector<std::string>();
     std::vector<std::shared_ptr<User>> users = std::vector<std::shared_ptr<User>>();
 
-    Room(std::string groupName, std::string password = "") : groupName(groupName), password(password) {
+    Room(std::string groupName, std::shared_ptr<User> admin, std::string password = "") : groupName(groupName), password(password), admin(admin) {
         std::string folderPath = "serverFolder/" + groupName;
         if (fs::exists(folderPath)) {
             std::cout << "Folder '" << folderPath << "' already exists.\n";

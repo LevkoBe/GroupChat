@@ -16,7 +16,7 @@ public:
 
     std::string receiveMessage();
 
-    void receiveMessages(SOCKET clientSocket);
+    void receiveMessages();
 
     ~Client();
 };

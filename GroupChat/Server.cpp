@@ -102,7 +102,7 @@ void Server::receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMute
     }
 }
 
-std::string Server::invitingMessage(std::string& username) {
+std::string Server::invitingMessage(const std::string& username) {
 
     std::string message = "Hi, " + username + "!\n";
     switch (rooms.size()) {
@@ -125,8 +125,8 @@ std::string Server::invitingMessage(std::string& username) {
         }
     }
     message += "(square brackets represent private groups with a need to provide password)\n";
-    message += "If you have list of existing groups, you can join to any of them by just entering their index.\n";
-    message += "If you are going to create new group, simply type its name, and hit 'Enter'.\n";
+    message += "If you have list of existing groups, you can join to any of them by just entering their INDEX.\n";
+    message += "If you are going to create new group, simply type its NAME, and hit 'Enter'.\n";
 
     return message;
 }
@@ -150,23 +150,26 @@ void Server::addUser(std::shared_ptr<User> user, std::shared_ptr<Room> room, SOC
 }
 
 std::shared_ptr<User> Server::registerClient(SOCKET clientSocket) {
-    Common::sendChunkedData(clientSocket, 'm', "Please, enter your name to connect to the server");
-    Common::receiveOptionType(clientSocket);
-    std::string username = Common::receiveChunkedData(clientSocket);
+    int index;
+
+    std::string username = askForUsername(clientSocket);
     std::shared_ptr<User> user = std::make_shared<User>(username, clientSocket);
 
-    std::string message = invitingMessage(username); // ask for room name
-    Common::sendChunkedData(clientSocket, 'm', message);
+    std::string groupname = askForGroupname(clientSocket, username);
 
-    Common::receiveOptionType(clientSocket);
-    message = Common::receiveChunkedData(clientSocket); // parsing answer
-    int index;
-    if (!tryParseInt(message, index) || index-- > rooms.size() || index < 0) {
+    if (!tryParseInt(groupname, index) || index-- > rooms.size() || index < 0) {
         index = rooms.size();
-        std::shared_ptr<Room> room = std::make_shared<Room>(message);
+        std::shared_ptr<Room> room = std::make_shared<Room>(groupname, user);
         rooms.push_back(room);
+        room->password = askForPassword(clientSocket, -1);
+        addUser(user, rooms[index], clientSocket);
+        return user;
     }
-    addUser(user, rooms[index], clientSocket);
+
+    std::string password = askForPassword(clientSocket, index);
+    if (password == rooms[index]->password)
+        addUser(user, rooms[index], clientSocket);
+    else Common::sendChunkedData(clientSocket, '-', "Incorrect password.");
     return user;
 }
 
@@ -177,4 +180,38 @@ void Server::clientMessaging(SOCKET clientSocket)
 Server::~Server() {
     closesocket(serverSocket);
     WSACleanup();
+}
+
+std::string Server::askForPassword(SOCKET clientSocket, int index) {
+    std::string message;
+    if (index == -1) {
+        message = "If you want, you can create a PASSWORD for your group.\n";
+        message += "Otherwise, enter '-', and hit Enter.\n";
+        Common::sendChunkedData(clientSocket, 'm', message);
+        Common::receiveOptionType(clientSocket);
+        return Common::receiveChunkedData(clientSocket);
+    }
+    message = "Please, enter the password to the group.";
+    
+    if (rooms[index]->password == "-") {
+        Common::sendChunkedData(clientSocket, '-', "Password not required.");
+        return "-";
+    }
+    Common::sendChunkedData(clientSocket, 'm', "Please, enter the password: ");
+    Common::receiveOptionType(clientSocket);
+    return Common::receiveChunkedData(clientSocket);
+}
+
+std::string Server::askForUsername(SOCKET clientSocket) {
+    Common::sendChunkedData(clientSocket, 'm', "Please, enter your name to connect to the server");
+    Common::receiveOptionType(clientSocket);
+    return Common::receiveChunkedData(clientSocket);
+}
+
+std::string Server::askForGroupname(SOCKET clientSocket, const std::string& username) {
+
+    std::string message = invitingMessage(username);
+    Common::sendChunkedData(clientSocket, 'm', message);
+    Common::receiveOptionType(clientSocket);
+    return Common::receiveChunkedData(clientSocket);
 }
