@@ -42,19 +42,13 @@ std::string Client::receiveMessage() {
 }
 
 void Client::receiveHistory() {
-    char option;// = Common::receiveOptionType(clientSocket);
+    char option;
     std::string message;
-    //while (option != 'h') {
-    //    message = Common::receiveChunkedData(clientSocket);
-    //    std::cout << message << std::endl;
-    //    option = Common::receiveOptionType(clientSocket);
-    //}
     do {
         option = Common::receiveOptionType(clientSocket);
         message = Common::receiveChunkedData(clientSocket);
         std::cout << message << std::endl;
     } while (option != 'h');
-    //Common::receiveChunkedData(clientSocket);
 }
 
 void Client::receiveMessages() {
