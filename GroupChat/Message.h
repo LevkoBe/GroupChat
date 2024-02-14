@@ -1,16 +1,17 @@
 #pragma once
 #include <iostream>
 #include "MessageType.h"
+#include "Room.h"
 
 struct Message {
-    std::string room;
     std::string sender;
     std::string message;
     MessageType type;
+    std::shared_ptr<Room> room;
 
     Message() : type(Text) {}
 
-    Message(std::string message, std::string sender, std::string room, MessageType type = Text) :
+    Message(std::string message, std::string sender, std::shared_ptr<Room> room, MessageType type = Text) :
         message(std::move(message)), sender(std::move(sender)), room(std::move(room)), type(type) {}
 
     Message(const Message& other) :

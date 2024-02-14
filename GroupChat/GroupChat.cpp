@@ -1,12 +1,12 @@
 #include "Server.h"
 #pragma comment(lib, "ws2_32.lib")
 
-Server server;
 std::mutex consoleMutex;
+Server server(consoleMutex);
 std::vector<std::thread> clients;
 
 void handleClient(SOCKET clientSocket) {
-    server.handleClient(clientSocket, consoleMutex);
+    server.handleClient(clientSocket);
 }
 
 int main() {

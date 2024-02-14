@@ -1,8 +1,7 @@
 #include "Server.h"
-#include "User.h"
 
 // public
-Server::Server() {
+Server::Server(std::mutex& consoleMutex) : consoleMutex(consoleMutex), messenger(consoleMutex) {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         Common::errorMessage("WSAStartup failed.\n");
@@ -38,15 +37,15 @@ Server::Server() {
     std::cout << "Server is listening on port 8080...\n";
 }
 
-void Server::handleClient(SOCKET clientSocket, std::mutex& consoleMutex) {
+void Server::handleClient(SOCKET clientSocket) {
     clients.push_back(clientSocket);
-    
+
     std::shared_ptr<User> user = registerClient(clientSocket); // put the user into a group
     {
         std::lock_guard<std::mutex> lock(consoleMutex);
         std::cout << "Client " << clientSocket << " added to a group.\n";
     }
-    receiveMessages(user, consoleMutex);
+    receiveMessages(user);
 }
 
 Server::~Server() {
@@ -105,17 +104,17 @@ std::shared_ptr<Room> Server::roomByString(std::string& roomString) {
 
 
 // messaging
-void Server::receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMutex) {
+void Server::receiveMessages(std::shared_ptr<User> user) {
     std::string message;
     std::shared_ptr<Room> room = roomByString(user->room);
-    std::unique_ptr<Message> userMessage = std::make_unique<Message>();
+    std::shared_ptr<Message> userMessage = std::make_shared<Message>();
     while (true) {
         char method = Common::receiveOptionType(user->clientSocket);
         switch (method) {
         case 'm':
             message = Common::receiveChunkedData(user->clientSocket);
-            *userMessage = Message(message, user->username, user->room);
-            broadcastMessage(*userMessage, user->clientSocket, consoleMutex, room);
+            *userMessage = Message(message, user->username, roomByString(user->room));
+            messenger.addMessageToQueue(userMessage);
             break;
         case 'f':
             break;
@@ -135,19 +134,6 @@ void Server::receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMute
             break;
         }
     }
-}
-
-void Server::broadcastMessage(const Message& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room) {
-
-    room->messageHistory.push_back(message.toStr());
-    for (std::shared_ptr<User> user : room->users) {
-        SOCKET client = user->clientSocket;
-        if (client != senderSocket) {
-            Common::sendChunkedData(client, 'm', message.toStr(), 100);
-        }
-    }
-    std::lock_guard<std::mutex> lock(consoleMutex);
-    std::cout << "Client " << senderSocket << ": " << message << std::endl;
 }
 
 
@@ -196,7 +182,7 @@ std::string Server::askForPassword(SOCKET clientSocket, int index) {
         return Common::receiveChunkedData(clientSocket);
     }
     message = "Please, enter the password to the group.";
-    
+
     if (rooms[index]->password == "-") {
         Common::sendChunkedData(clientSocket, '-', "-");
         return "-";

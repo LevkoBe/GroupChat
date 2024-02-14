@@ -40,9 +40,8 @@ int main() {
     std::string message;
     client.print("", 0);
     while (true) {
-        do {
-            std::getline(std::cin, message);
-        } while (message == "");
+        do std::getline(std::cin, message);
+        while (message == "");
         client.print("You: " + message);
 
         if (message == "   " || message == "stop" || !client.sendMessage('m', message)) {

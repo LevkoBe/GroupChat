@@ -1,11 +1,10 @@
 #pragma once
 
-#include "Common.h"
+#include <string> // ---
+#include "User.h"
 #include "Room.h"
-#include <string>
-#include <sstream>
-#include <vector>
-#include <mutex>
+#include "Common.h"
+#include "Messenger.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -25,17 +24,18 @@ class Server {
     std::string askForGroupname(SOCKET clientSocket, const std::string& username);
 
     // messaging
-    void receiveMessages(std::shared_ptr<User> user, std::mutex& consoleMutex);
-    void broadcastMessage(const Message& message, SOCKET senderSocket, std::mutex& consoleMutex, std::shared_ptr<Room> room);
+    void receiveMessages(std::shared_ptr<User> user);
 
 public:
     SOCKET serverSocket = 0;
     std::vector<SOCKET> clients;
     std::vector<std::shared_ptr<Room>> rooms;
+    std::mutex& consoleMutex;
+    Messenger messenger;
 
-    Server();
+    Server(std::mutex& consoleMutex);
 
-    void handleClient(SOCKET clientSocket, std::mutex& consoleMutex);
+    void handleClient(SOCKET clientSocket);
 
     ~Server();
 };
