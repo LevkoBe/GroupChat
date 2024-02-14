@@ -75,7 +75,7 @@ void Client::print(const std::string& output, int numLines) {
     std::lock_guard<std::mutex> lock(consoleMutex);
     for (int i = 0; i < numLines; i++) clearLastLine();
 
-    std::cout << output << std::endl;
+    if (output != "") std::cout << output << std::endl;
     std::cout << "------------------------------------------------------------------------------------------\n";
     std::cout << "Type : save(to download a file), file(to send a file) or just a message.Then hit ENTER.\n";
     std::cout << "SEND : ";
