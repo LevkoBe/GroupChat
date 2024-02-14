@@ -9,21 +9,26 @@
 class Client {
 public:
     SOCKET clientSocket = 0;
-
     Client();
+    ~Client();
 
+    // messaging
     bool sendMessage(const char operationType, const std::string& message);
 
+    void receiveMessages();
     std::string receiveMessage();
 
     void receiveHistory();
 
-    void receiveMessages();
+    
+    // files
+    void saveFile();
+    void sendFile();
 
+
+    // console
+    void clearLastLine();
     void print(const std::string& output, int numLines = 3);
 
-    void clearLastLine();
-
-    ~Client();
 };
 

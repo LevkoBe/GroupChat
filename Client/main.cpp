@@ -54,6 +54,12 @@ int main() {
             std::cout << client.receiveMessage();
             break;
         }
+        else if (message == "_file") {
+            client.sendFile();
+        }
+        else if (message == "_save") {
+            client.saveFile();
+        }
     }
 
     receiveThread.join();

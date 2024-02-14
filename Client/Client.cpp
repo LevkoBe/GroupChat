@@ -3,6 +3,7 @@
 
 std::mutex consoleMutex;
 
+// basic
 Client::Client() { // todo
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -29,28 +30,16 @@ Client::Client() { // todo
         return;
     }
 }
+Client::~Client() {
+    closesocket(clientSocket);
+    WSACleanup();
+}
 
+// messaging
 bool Client::sendMessage(const char operationType, const std::string& message) {
     bool result = Common::sendChunkedData(clientSocket, operationType, message, 100);
     return result;
 }
-
-std::string Client::receiveMessage() {
-    Common::receiveOptionType(clientSocket);
-    std::string message = Common::receiveChunkedData(clientSocket);
-    return message;
-}
-
-void Client::receiveHistory() {
-    char option;
-    std::string message;
-    do {
-        option = Common::receiveOptionType(clientSocket);
-        message = Common::receiveChunkedData(clientSocket);
-        std::cout << message << std::endl;
-    } while (option != 'h');
-}
-
 void Client::receiveMessages() {
     std::string message;
     while (true) {
@@ -71,6 +60,35 @@ void Client::receiveMessages() {
     }
 }
 
+std::string Client::receiveMessage() {
+    Common::receiveOptionType(clientSocket);
+    std::string message = Common::receiveChunkedData(clientSocket);
+    return message;
+}
+
+void Client::receiveHistory() {
+    char option;
+    std::string message;
+    do {
+        option = Common::receiveOptionType(clientSocket);
+        message = Common::receiveChunkedData(clientSocket);
+        std::cout << message << std::endl;
+    } while (option != 'h');
+}
+
+// files
+void Client::saveFile() {
+
+}
+
+void Client::sendFile() {
+
+}
+
+// console
+void Client::clearLastLine() {
+    std::cout << "\x1b[1A\x1b[2K";
+}
 void Client::print(const std::string& output, int numLines) {
     std::lock_guard<std::mutex> lock(consoleMutex);
     for (int i = 0; i < numLines; i++) clearLastLine();
@@ -81,11 +99,3 @@ void Client::print(const std::string& output, int numLines) {
     std::cout << "SEND : ";
 }
 
-void Client::clearLastLine() {
-    std::cout << "\x1b[1A\x1b[2K";
-}
-
-Client::~Client() {
-    closesocket(clientSocket);
-    WSACleanup();
-}
