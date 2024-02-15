@@ -22,7 +22,6 @@ public:
 
     
     // files
-    void saveFile();
     void sendFile();
 
 

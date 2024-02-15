@@ -50,7 +50,13 @@ void Client::receiveMessages() {
             print(message, 2);
             break;
         case 'f':
-            print(message, 2);
+            Common::createFile(message);
+            print("file downloaded.", 2);
+            break;
+        case 'a':
+            Common::appendToFile(message);
+            break;
+        case 's':
             break;
         default:
             std::cerr << "Server disconnected.\n";
@@ -77,12 +83,15 @@ void Client::receiveHistory() {
 }
 
 // files
-void Client::saveFile() {
-
-}
 
 void Client::sendFile() {
-
+    std::string filename;
+    std::scoped_lock<std::mutex> lock(consoleMutex);
+    std::cout << "Enter file name you'd like to send: ";
+    std::getline(std::cin, filename);
+    Common::sendFile(clientSocket, filename);
+    sendMessage('m', "FILE");
+    std::cout << "File was sent.\n";
 }
 
 // console
@@ -95,7 +104,7 @@ void Client::print(const std::string& output, int numLines) {
 
     if (output != "") std::cout << output << std::endl;
     std::cout << "------------------------------------------------------------------------------------------\n";
-    std::cout << "Type : save(to download a file), file(to send a file) or just a message.Then hit ENTER.\n";
+    std::cout << "Type : _save (to download a file), _file (to send a file) or just some message.Then hit ENTER.\n";
     std::cout << "SEND : ";
 }
 

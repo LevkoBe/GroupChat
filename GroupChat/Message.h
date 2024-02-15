@@ -47,7 +47,21 @@ struct Message {
     }
 
     std::string toStr() const {
-        std::string str = sender + ": " + message;
+        std::string str;
+        switch (type)
+        {
+        case Text:
+            str = sender + ": " + message;
+            break;
+        case FileRequest:
+            break;
+        case File:
+            break;
+        case Image:
+            break;
+        default:
+            break;
+        }
         return str;
     }
 

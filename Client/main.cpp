@@ -44,21 +44,23 @@ int main() {
         do {
             std::getline(std::cin, message);
             numLines++;
+        } while (message == "");
+
+
+        if (message == "_file") {
+            client.sendFile();
+            client.print("", 6);
         }
-        while (message == "");
-
-        client.print("You: " + message, numLines);
-
-        if (message == "   " || message == "stop" || !client.sendMessage('m', message)) {
+        else if (message == "_save") {
+            client.sendMessage('s', "save");
+            client.print("", 4);
+        }
+        else if (message == "   " || message == "stop" || !client.sendMessage('m', message)) { // send
             client.sendMessage('-', message);
             std::cout << client.receiveMessage();
             break;
-        }
-        else if (message == "_file") {
-            client.sendFile();
-        }
-        else if (message == "_save") {
-            client.saveFile();
+        } else {
+            client.print("You: " + message, numLines); // print
         }
     }
 

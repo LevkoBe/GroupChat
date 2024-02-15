@@ -89,10 +89,13 @@ char Common::receiveOptionType(SOCKET clientSocket) {
 }
 
 // file handling methods
-bool Common::sendFile(SOCKET clientSocket, const std::string& filepath) {
+bool Common::sendFile(SOCKET clientSocket, const std::string& filename, const std::string& pathAdd) {
     const int chunkSize = 1024 * 1024;
     char* buffer = new char[chunkSize + 1];
+    int prefixLength = filename.length() + 1;
 
+    fs::path filepath = pathAdd == "" ? fs::current_path() / filename :
+        fs::current_path() / pathAdd / filename;
     std::ifstream file(filepath, std::ios::binary);
 
     if (!file.is_open()) {
@@ -102,16 +105,17 @@ bool Common::sendFile(SOCKET clientSocket, const std::string& filepath) {
         return false;
     }
 
+    char indicator = 'f';
     while (!file.eof()) {
-        file.read(buffer, chunkSize);
+        file.read(buffer, chunkSize - prefixLength);
         std::streamsize bytesRead = file.gcount();
         buffer[bytesRead] = '\0';
 
         if (bytesRead > 0) {
-            char indicator = (!file.eof()) ? '+' : '-';
             std::cout << "chunk " << indicator << std::endl;
-            std::string message = buffer;
+            std::string message = filename + '\n' + buffer;
             sendChunkedData(clientSocket, indicator, message);
+            indicator = 'a';
         }
     }
     delete[] buffer;
@@ -120,33 +124,34 @@ bool Common::sendFile(SOCKET clientSocket, const std::string& filepath) {
     return true;
 }
 
-bool Common::createFile(const std::string& filepath) {
-    std::vector<std::string> file = splitStringInTwo(filepath);
+bool Common::createFile(std::string& content, const std::string& pathAdd) {
+
+    std::vector<std::string> file = splitStringInTwo(content);
     std::string message;
 
     if (file.size() != 2) {
-        std::cerr << "Sorry, the message received is: '" + filepath + "', but expected were name and content of a file.";
+        std::cerr << "Sorry, expected were name and content of a file.";
         return false;
     }
 
-    std::string filename = file[0];
+    fs::path filepath = pathAdd == "" ? fs::current_path() / file[0] :
+        fs::current_path() / pathAdd / file[0];
     std::string fileContent = file[1];
 
-    std::ofstream outputFile(filename);
+    std::ofstream outputFile(filepath);
     if (!outputFile.is_open()) {
-        std::cerr << "Sorry, the file is already in use.";
+        std::cerr << "Sorry, the file " << filepath << " is already in use.\n";
         return false;
     }
 
     outputFile << fileContent;
     outputFile.close();
 
-    std::cerr << "File succesfully written!";
     return true;
 }
 
-bool Common::appendToFile(const std::string& filepath) {
-    std::vector<std::string> file = splitStringInTwo(filepath);
+bool Common::appendToFile(std::string& content, const std::string& pathAdd) {
+    std::vector<std::string> file = splitStringInTwo(content);
     std::string message;
 
     if (file.size() != 2) {
@@ -154,9 +159,10 @@ bool Common::appendToFile(const std::string& filepath) {
         return false;
     }
 
-    std::string filename = file[0];
+    fs::path filepath = pathAdd == "" ? fs::current_path() / file[0] :
+        fs::current_path() / pathAdd / file[0];
     std::string fileContent = file[1];
-    std::ofstream outputFile(filename, std::ios::app);
+    std::ofstream outputFile(filepath, std::ios::app);
     if (!outputFile.is_open()) {
         std::cerr << "Sorry, the file is already in use.";
         return false;
@@ -169,16 +175,33 @@ bool Common::appendToFile(const std::string& filepath) {
     return true;
 }
 
-bool Common::remove(const std::string& filepath)
-{
+bool Common::removeFolderContents(const std::string& folderPath) {
+    fs::path resultingPath = fs::current_path() / folderPath;
     try {
-        fs::remove_all(filepath);
+        for (const auto& entry : fs::directory_iterator(resultingPath)) {
+            if (fs::is_regular_file(entry)) {
+                fs::remove(entry.path());
+            }
+            else if (fs::is_directory(entry)) {
+                fs::remove_all(entry.path());
+            }
+        }
         return true;
     }
     catch (const std::exception& e) {
-        std::cerr << "Error deleting file/folder: " << e.what() << std::endl;
+        std::cerr << "Error deleting folder contents: " << e.what() << std::endl;
         return false;
     }
+}
+
+std::string Common::getFirstFile(const std::string& folderPath) {
+    fs::path resultingPath = fs::current_path() / folderPath;
+    for (const auto& entry : fs::directory_iterator(resultingPath)) {
+        if (fs::is_regular_file(entry)) {
+            return entry.path().filename().string();
+        }
+    }
+    return "";
 }
 
 
@@ -195,9 +218,3 @@ std::vector<std::string> Common::splitStringInTwo(const std::string& str, char d
     return parts;
 }
 
-std::string Common::fullPath(const std::string& filename, const std::string& username) {
-    if (username == "adminPassword") {
-        return (fs::path("serverFolder/") / filename).string();
-    }
-    return (fs::path("serverFolder/" + username + "/") / filename).string();
-}

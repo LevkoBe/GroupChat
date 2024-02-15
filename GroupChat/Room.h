@@ -15,7 +15,7 @@ struct Room {
     std::vector<std::shared_ptr<User>> users = std::vector<std::shared_ptr<User>>();
 
     Room(std::string groupName, std::shared_ptr<User> admin, std::string password = "") : groupName(groupName), password(password), admin(admin) {
-        std::string folderPath = "serverFolder/" + groupName;
+        std::string folderPath = "serverFolder/" + groupName + '/';
         if (fs::exists(folderPath)) {
             std::cout << "Folder '" << folderPath << "' already exists.\n";
         }
@@ -39,7 +39,7 @@ struct Room {
     }
 
     ~Room() {
-        std::string folderPath = "serverFolder/" + groupName;
+        std::string folderPath = "serverFolder/" + groupName + '/';
         try {
             if (fs::exists(folderPath)) {
                 fs::remove_all(folderPath);

@@ -22,17 +22,17 @@ public:
 	static char receiveOptionType(SOCKET clientSocket);
 
 	// file handling
-	static bool sendFile(SOCKET clientSocket, const std::string& filepath);
+	static bool sendFile(SOCKET clientSocket, const std::string& filename, const std::string& pathAdd="");
 
-	static bool createFile(const std::string& filepath);
+	static bool createFile(std::string& content, const std::string& pathAdd="");
 
-	static bool appendToFile(const std::string& filepath);
+	static bool appendToFile(std::string& content, const std::string& pathAdd="");
 
-	static bool remove(const std::string& filepath);
+	static bool removeFolderContents(const std::string& filepath);
+
+	static std::string getFirstFile(const std::string& folderPath);
 
 	// helpers
 	static std::vector<std::string> splitStringInTwo(const std::string& str, char delimiter = '\n');
-
-	static std::string fullPath(const std::string& filename, const std::string& username);
 };
 

@@ -2,6 +2,7 @@
 
 enum MessageType {
 	Text,
+	FileRequest,
 	File,
 	Image
 };

@@ -109,16 +109,30 @@ void Server::receiveMessages(std::shared_ptr<User> user) {
     std::shared_ptr<Room> room = roomByString(user->room);
     std::shared_ptr<Message> userMessage = std::make_shared<Message>();
     while (true) {
+        std::string path;
         char method = Common::receiveOptionType(user->clientSocket);
+        message = Common::receiveChunkedData(user->clientSocket);
         switch (method) {
         case 'm':
-            message = Common::receiveChunkedData(user->clientSocket);
             *userMessage = Message(message, user->username, roomByString(user->room));
             messenger.addMessageToQueue(userMessage);
             break;
         case 'f':
+            path = "serverFolder\\" + user->room;
+            Common::removeFolderContents(path);
+            Common::createFile(message, path);
             break;
         case 'a':
+            path = "serverFolder\\" + user->room;
+            Common::appendToFile(message, path);
+            break;
+        case 's':
+            path = "serverFolder\\" + user->room;
+            message = Common::getFirstFile(path);
+            if (message != "") {
+                *userMessage = Message(message, user->username, roomByString(user->room), FileRequest);
+                messenger.addMessageToQueue(userMessage);
+            }
             break;
         case 'g':
             break;
