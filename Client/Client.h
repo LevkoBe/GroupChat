@@ -22,12 +22,13 @@ public:
 
     
     // files
-    void sendFile();
+    bool sendFile();
 
 
     // console
     void clearLastLine();
-    void print(const std::string& output, int numLines = 3);
+    void setPalette(int palette = 0);
+    void print(const std::string& output, int numLines = 3, int palette = 0);
 
 };
 

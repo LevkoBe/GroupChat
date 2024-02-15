@@ -48,8 +48,11 @@ int main() {
 
 
         if (message == "_file") {
-            client.sendFile();
-            client.print("", 6);
+            if (client.sendFile()) {
+                client.print("File was sent.", 5, 4);
+            } else {
+                client.print("File wasn't sent.", 5, 5);
+            }
         }
         else if (message == "_save") {
             client.sendMessage('s', "save");
@@ -60,7 +63,7 @@ int main() {
             std::cout << client.receiveMessage();
             break;
         } else {
-            client.print("You: " + message, numLines); // print
+            client.print("You: " + message, numLines, 1); // print
         }
     }
 

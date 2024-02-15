@@ -36,7 +36,6 @@ void Messenger::broadcastMessages(std::mutex& consoleMutex) {
     while (true) {
         std::unique_lock<std::mutex> lock(messageQueueMutex);
         messageAvailableCondition.wait(lock, [&](){ return !messageQueue.empty(); });
-        std::cout << "Broadcast Messages: Woke up, processing messages..." << std::endl;
 
         while (!messageQueue.empty()) {
             std::shared_ptr<Message> message = messageQueue.front();

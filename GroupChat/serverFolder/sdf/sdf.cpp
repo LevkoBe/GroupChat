@@ -47,11 +47,11 @@ void Client::receiveMessages() {
         message = Common::receiveChunkedData(clientSocket);
         switch (option) {
         case 'm':
-            print(message, 2);
+            print(message, 2, 3);
             break;
         case 'f':
             Common::createFile(message);
-            print("file downloaded.", 2);
+            print("file downloaded.", 2, 4);
             break;
         case 'a':
             Common::appendToFile(message);
@@ -84,25 +84,54 @@ void Client::receiveHistory() {
 
 // files
 
-void Client::sendFile() {
+bool Client::sendFile() {
     std::string filename;
     std::scoped_lock<std::mutex> lock(consoleMutex);
     std::cout << "Enter file name you'd like to send: ";
     std::getline(std::cin, filename);
-    Common::sendFile(clientSocket, filename);
-    sendMessage('m', "FILE");
-    std::cout << "File was sent.\n";
+    if (Common::sendFile(clientSocket, filename)) {
+        sendMessage('m', "FILE");
+        return true;
+    }
+    return false;
 }
 
 // console
 void Client::clearLastLine() {
     std::cout << "\x1b[1A\x1b[2K";
 }
-void Client::print(const std::string& output, int numLines) {
+void Client::setPalette(int palette) {
+    switch (palette)
+    {
+    case 0:
+        std::cout << "\033[0m";
+        break;
+    case 1:
+        std::cout << "\033[0;33m";
+        break;
+    case 2:
+        std::cout << "\033[1;32m";
+        break;
+    case 3:
+        std::cout << "\033[1;33m";
+        break;
+    case 4:
+        std::cout << "\033[0;32m";
+        break;
+    case 5:
+        std::cout << "\033[0;31m";
+        break;
+    default:
+        break;
+    }
+}
+void Client::print(const std::string& output, int numLines, int palette) {
     std::lock_guard<std::mutex> lock(consoleMutex);
     for (int i = 0; i < numLines; i++) clearLastLine();
 
+    setPalette(palette);
     if (output != "") std::cout << output << std::endl;
+    setPalette(0);
     std::cout << "------------------------------------------------------------------------------------------\n";
     std::cout << "Type : _save (to download a file), _file (to send a file) or just some message.Then hit ENTER.\n";
     std::cout << "SEND : ";

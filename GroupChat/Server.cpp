@@ -70,11 +70,11 @@ std::string Server::invitingMessage(const std::string& username) {
         break;
     }
     for (int i = 0; i < rooms.size(); i++) {
-        if (rooms[i]->password != "") {
-            message += "[" + std::to_string(i + 1) + ". " + rooms[i]->groupName + "]\n";
+        if (rooms[i]->password != "-") {
+            message += "[" + std::to_string(i + 1) + ". " + rooms[i]->groupName + " (" + std::to_string(rooms[i]->users.size()) + ")]\n";
         }
         else {
-            message += std::to_string(i + 1) + ". " + rooms[i]->groupName + "\n";
+            message += std::to_string(i + 1) + ". " + rooms[i]->groupName + " (" + std::to_string(rooms[i]->users.size()) + ")\n";
         }
     }
     message += "(square brackets represent private groups with a need to provide password)\n";
@@ -184,6 +184,10 @@ void Server::addUser(std::shared_ptr<User> user, std::shared_ptr<Room> room, SOC
         Common::sendChunkedData(clientSocket, 'm', message);
     }
     Common::sendChunkedData(clientSocket, 'h', "    You joined this group   ");
+
+    std::string message = "    " + user->username + " joined the group    ";
+    std::shared_ptr<Message> userMessage = std::make_shared<Message>(message, user->username, roomByString(user->room), Text);
+    messenger.addMessageToQueue(userMessage);
 }
 
 std::string Server::askForPassword(SOCKET clientSocket, int index) {
