@@ -12,10 +12,15 @@ public:
     Client();
     ~Client();
 
+    // registration
+    bool introduceYourself();
+    bool joinGroup();
+
     // messaging
+    bool sendMessages();
     bool sendMessage(const char operationType, const std::string& message);
 
-    void receiveMessages();
+    void receiveMessages(std::mutex& threadExclusor, std::condition_variable& inGroup);
     std::string receiveMessage();
 
     void receiveHistory();

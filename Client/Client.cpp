@@ -35,14 +35,92 @@ Client::~Client() {
     WSACleanup();
 }
 
+bool Client::introduceYourself() {
+
+    std::string message;
+
+    std::string received = receiveMessage();
+    std::cout << received << std::endl; // server's invitation
+
+    std::getline(std::cin, message);
+    sendMessage('m', message);
+
+    return true;
+}
+
+bool Client::joinGroup() {
+    std::string message;
+
+    std::cout << receiveMessage();
+    std::getline(std::cin, message); // groupname
+    sendMessage('m', message);
+
+    std::string received = receiveMessage();
+    std::cout << received << std::endl; // password request
+
+    if (received != "-") { // if password required
+        std::getline(std::cin, message);
+        sendMessage('m', message);
+    }
+
+    system("cls");
+    std::cout << receiveMessage() << std::endl; // group admission
+    receiveHistory();
+    return true;
+}
+
 // messaging
+
+bool Client::sendMessages() {
+    std::string message;
+    print("", 0);
+
+    while (true) {
+        int numLines = 2;
+        do {
+            std::getline(std::cin, message);
+            numLines++;
+        } while (message == "");
+
+
+        if (message == "_file") {
+            if (sendFile()) {
+                print("File was sent.", 5, 4);
+            } else {
+                print("File wasn't sent.", 5, 5);
+            }
+        } else if (message == "_save") {
+            sendMessage('s', "save");
+            print("", 4);
+        } else if (message == "_rejoin") {
+            system("cls");
+            sendMessage('r', "rejoin");
+            return true;
+            break;
+        } else if (message == "   " || message == "stop" || !sendMessage('m', message)) { // send
+            sendMessage('-', message);
+            std::cout << receiveMessage();
+            return false;
+            break;
+        } else {
+            print("You: " + message, numLines, 1); // print
+        }
+    }
+
+}
+
 bool Client::sendMessage(const char operationType, const std::string& message) {
     bool result = Common::sendChunkedData(clientSocket, operationType, message, 100);
     return result;
 }
-void Client::receiveMessages() {
+void Client::receiveMessages(std::mutex& threadExclusor, std::condition_variable& inGroup) {
     std::string message;
-    while (true) {
+    bool working = true;
+    while (working) {
+        std::unique_lock<std::mutex> lock(dataMutex);
+        dataCondition.wait(lock, [ ] { return sharedData != 0; });
+    }
+    while (working) {
         char option = Common::receiveOptionType(clientSocket);
         message = Common::receiveChunkedData(clientSocket);
         switch (option) {
@@ -56,7 +134,8 @@ void Client::receiveMessages() {
         case 'a':
             Common::appendToFile(message);
             break;
-        case 's':
+        case 'r':
+            working = false;
             break;
         default:
             std::cerr << "Server disconnected.\n";
@@ -127,13 +206,14 @@ void Client::setPalette(int palette) {
 }
 void Client::print(const std::string& output, int numLines, int palette) {
     std::lock_guard<std::mutex> lock(consoleMutex);
-    for (int i = 0; i < numLines; i++) clearLastLine();
+    for (int i = 0; i <= numLines; i++) clearLastLine();
 
     setPalette(palette);
     if (output != "") std::cout << output << std::endl;
     setPalette(0);
-    std::cout << "------------------------------------------------------------------------------------------\n";
-    std::cout << "Type : _save (to download a file), _file (to send a file) or just some message.Then hit ENTER.\n";
+    std::cout << "------------------------------------------------------------------------\n";
+    std::cout << "Type : _save (to download a file), _file (to send a file), \
+                 \n_rejoin (to join different group) or just any message.Then hit ENTER.\n";
     std::cout << "SEND : ";
 }
 
