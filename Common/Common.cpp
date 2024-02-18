@@ -118,6 +118,7 @@ bool Common::sendFile(SOCKET clientSocket, const std::string& filename, const st
             indicator = 'a';
         }
     }
+    sendChunkedData(clientSocket, 's', filename);
     delete[] buffer;
 
     file.close();

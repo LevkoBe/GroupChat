@@ -9,7 +9,9 @@ struct User {
     SOCKET clientSocket;
     UserState state;
 
-    User(std::string username, SOCKET clientSocket) : username(std::move(username)), clientSocket(clientSocket), state(Newcomer) {}
+    User(std::string username, SOCKET clientSocket): username(std::move(username)), clientSocket(clientSocket), state(Connected) {
+        if (this->username == "") state = Disconnected;
+    }
 
     User(const User& other) : room(other.room), username(other.username), clientSocket(other.clientSocket), state(other.state) {}
 

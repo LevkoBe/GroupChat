@@ -2,9 +2,11 @@
 
 
 enum UserState {
+	Disconnected,
+	Connected,
+	InRoom,
+
 	Active,
 	Inactive,
 	Writing,
-	Connecting,
-	Newcomer,
 };

@@ -1,5 +1,5 @@
 #include "Client.h"
-#include <mutex>
+#include "Globals.h"
 
 std::mutex consoleMutex;
 
@@ -35,33 +35,112 @@ Client::~Client() {
     WSACleanup();
 }
 
-// messaging
-bool Client::sendMessage(const char operationType, const std::string& message) {
-    bool result = Common::sendChunkedData(clientSocket, operationType, message, 100);
-    return result;
+// Q&A
+bool Client::answerQuestion(State& state) {
+    //std::unique_lock<std::mutex> lock(recvLocker); /// systematic approach, but recv() will not be called anyway
+    std::string questionAnswer = Common::receiveChunkedData(clientSocket);
+    std::cout << questionAnswer << std::endl;
+    char option = 'm';
+    std::getline(std::cin, questionAnswer);
+    if (questionAnswer == "save") {
+        option = 'r'; // request to save the file
+    }
+    Common::sendChunkedData(clientSocket, option, questionAnswer);
+    answerRequired.notify_one();
+    state = Messaging;
+    return true;
 }
-void Client::receiveMessages() {
+
+bool Client::enterGroup(State& state) {
+    Common::receiveOptionType(clientSocket);
+    std::cout << Common::receiveChunkedData(clientSocket) << std::endl;
+    std::string groupName;
+    std::getline(std::cin, groupName);
+    if (!Common::sendChunkedData(clientSocket, '?', groupName)) return false;
+
+    bool passwordRequired = Common::receiveOptionType(clientSocket) != 'm';
+    std::cout << Common::receiveChunkedData(clientSocket) << std::endl;
+    if (passwordRequired) {
+        std::string password;
+        std::getline(std::cin, password);
+        if (!Common::sendChunkedData(clientSocket, '?', password)) return false;
+    }
+
+    state = Waiting;
+    system("cls");
+    answerRequired.notify_one();
+    return true;
+}
+
+// messaging
+
+bool Client::sendMessage() {
+    int numLines = 2;
     std::string message;
-    while (true) {
-        char option = Common::receiveOptionType(clientSocket);
-        message = Common::receiveChunkedData(clientSocket);
+    do {
+        std::getline(std::cin, message);
+        numLines++;
+    } while (message == "");
+
+
+    if (message == "_exit") {
+        Common::sendChunkedData(clientSocket, 'x', "Rejoin");
+    } else if (message == "_file") {
+        if (sendFile()) {
+            print("File was sent.", 5, 4);
+        } else {
+            print("File wasn't sent.", 5, 5);
+        }
+    } else if (message == "_save") {
+        Common::sendChunkedData(clientSocket, 's', "save");
+        print("", 4);
+    } else if (message == "   " || message == "stop" || !Common::sendChunkedData(clientSocket, 'm', message)) { // send
+        Common::sendChunkedData(clientSocket, '-', message);
+        std::cout << receiveMessage();
+        return false;
+    }
+    print("You: " + message, numLines, 1); // print
+    return true;
+}
+void Client::receiveMessages(State& state) {
+    char option;
+    std::string message;
+    while (state != Disconnected) {
+        {
+            std::unique_lock<std::mutex> lock(recvLocker);
+            answerRequired.wait(lock, [ & ] { return (state == Messaging || state == Waiting); });
+            option = Common::receiveOptionType(clientSocket);
+            if (option == '?') {
+                state = AnswerRequired;
+                continue;
+            }
+            message = Common::receiveChunkedData(clientSocket);
+        }
         switch (option) {
-        case 'm':
-            print(message, 2, 3);
-            break;
-        case 'f':
-            Common::createFile(message);
-            print("file downloaded.", 2, 4);
-            break;
-        case 'a':
-            Common::appendToFile(message);
-            break;
-        case 's':
-            break;
-        default:
-            std::cerr << "Server disconnected.\n";
-            return;
-            break; ///
+            case 'm':
+                print(message, 2, 3);
+                break;
+            case 'f':
+                Common::createFile(message);
+                print("file is being downloaded...", 2, 4);
+                break;
+            case 'a':
+                Common::appendToFile(message);
+                break;
+            case 's':
+                print("file downloaded.", 2, 4);
+                break;
+            case 'h':
+                state = Messaging;
+                break;
+            case 'x':
+                state = Entering;
+                break;
+            case '-':
+            default:
+                std::cerr << "Server disconnected.\n";
+                return;
+                break; ///
         }
     }
 }
@@ -83,14 +162,13 @@ void Client::receiveHistory() {
 }
 
 // files
-
 bool Client::sendFile() {
     std::string filename;
     std::scoped_lock<std::mutex> lock(consoleMutex);
     std::cout << "Enter file name you'd like to send: ";
     std::getline(std::cin, filename);
     if (Common::sendFile(clientSocket, filename)) {
-        sendMessage('m', "FILE");
+        Common::sendChunkedData(clientSocket, 'm', "FILE: " + filename);
         return true;
     }
     return false;
@@ -101,28 +179,27 @@ void Client::clearLastLine() {
     std::cout << "\x1b[1A\x1b[2K";
 }
 void Client::setPalette(int palette) {
-    switch (palette)
-    {
-    case 0:
-        std::cout << "\033[0m";
-        break;
-    case 1:
-        std::cout << "\033[0;33m";
-        break;
-    case 2:
-        std::cout << "\033[1;32m";
-        break;
-    case 3:
-        std::cout << "\033[1;33m";
-        break;
-    case 4:
-        std::cout << "\033[0;32m";
-        break;
-    case 5:
-        std::cout << "\033[0;31m";
-        break;
-    default:
-        break;
+    switch (palette) {
+        case 0:
+            std::cout << "\033[0m";
+            break;
+        case 1:
+            std::cout << "\033[0;33m";
+            break;
+        case 2:
+            std::cout << "\033[1;32m";
+            break;
+        case 3:
+            std::cout << "\033[1;33m";
+            break;
+        case 4:
+            std::cout << "\033[0;32m";
+            break;
+        case 5:
+            std::cout << "\033[0;31m";
+            break;
+        default:
+            break;
     }
 }
 void Client::print(const std::string& output, int numLines, int palette) {

@@ -6,16 +6,30 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
+enum State {
+    Entering,
+    Disconnected,
+    AnswerRequired,
+    Messaging,
+    Waiting,
+};
+
 class Client {
 public:
     SOCKET clientSocket = 0;
     Client();
     ~Client();
 
-    // messaging
-    bool sendMessage(const char operationType, const std::string& message);
+    // Q&A
+    bool answerQuestion(State& state);
 
-    void receiveMessages();
+    // 
+    bool enterGroup(State& state);
+
+    // messaging
+    bool sendMessage();
+
+    void receiveMessages(State& state);
     std::string receiveMessage();
 
     void receiveHistory();
@@ -28,7 +42,7 @@ public:
     // console
     void clearLastLine();
     void setPalette(int palette = 0);
-    void print(const std::string& output, int numLines = 3, int palette = 0);
+    void print(const std::string& output="", int numLines = 3, int palette = 0);
 
 };
 

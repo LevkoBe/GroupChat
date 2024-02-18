@@ -16,21 +16,25 @@ class Server {
     std::shared_ptr<Room> roomByString(std::string& roomString);
 
     // registration
-    std::shared_ptr<User> registerClient(SOCKET clientSocket);
+    std::shared_ptr<Room> joinRoom(std::shared_ptr<User> user);
+    std::shared_ptr<Room> newRoom(std::shared_ptr<User> user);
+
     void addUser(std::shared_ptr <User> user, std::shared_ptr<Room> room, SOCKET clientSocket);
 
-    std::string askForPassword(SOCKET clientSocket, int index = -1);
+    bool askForPassword(std::shared_ptr<User> user, const std::string& password);
     std::string askForUsername(SOCKET clientSocket);
     std::string askForGroupname(SOCKET clientSocket, const std::string& username);
 
     // messaging
-    void receiveMessages(std::shared_ptr<User> user);
+    void receiveMessages(std::shared_ptr<User> user, std::shared_ptr<Room> room);
+    char receiveSignal(std::shared_ptr<User> user);
 
 public:
     SOCKET serverSocket = 0;
     std::vector<SOCKET> clients;
     std::vector<std::shared_ptr<Room>> rooms;
     std::mutex& consoleMutex;
+    std::mutex roomsLock;
     Messenger messenger;
 
     Server(std::mutex& consoleMutex);

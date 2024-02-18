@@ -2,6 +2,8 @@
 
 std::queue<std::shared_ptr<Message>> messageQueue;
 
+//std::mutex m;
+
 void Messenger::broadcastMessage(const Message& message, std::mutex& consoleMutex) {
 
     std::shared_ptr<Room> room = message.room;
@@ -11,14 +13,23 @@ void Messenger::broadcastMessage(const Message& message, std::mutex& consoleMute
     case Text:
         room->messageHistory.push_back(message.toStr());
         for (std::shared_ptr<User> user : room->users) {
-            if (user->username != message.sender) {
-                Common::sendChunkedData(user->clientSocket, 'm', message.toStr(), 100);
+            if (user->clientSocket != message.senderSocket) {
+                Common::sendChunkedData(user->clientSocket, 'm', message.toStr());
+            }
+        }
+        break;
+    case File:
+        room->messageHistory.push_back(message.toStr());
+        for (std::shared_ptr<User> user : room->users) {
+            if (user->clientSocket != message.senderSocket) {
+                Common::sendChunkedData(user->clientSocket, 'm', message.toStr());
+                Common::sendChunkedData(user->clientSocket, '?', "Do you want to download ('save' if yes)?");
             }
         }
         break;
     case FileRequest:
         for (std::shared_ptr<User> user : room->users) {
-            if (user->username == message.sender) { // todo: remake into sockets
+            if (user->clientSocket != message.senderSocket) {
                 folderpath = "serverFolder\\" + room->groupName;
                 filename = Common::getFirstFile(folderpath);
                 Common::sendFile(user->clientSocket, filename, folderpath);
