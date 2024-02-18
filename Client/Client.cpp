@@ -48,6 +48,7 @@ bool Client::answerQuestion(State& state) {
     Common::sendChunkedData(clientSocket, option, questionAnswer);
     answerRequired.notify_one();
     state = Messaging;
+    print("", 4);
     return true;
 }
 
@@ -87,13 +88,14 @@ bool Client::sendMessage() {
         Common::sendChunkedData(clientSocket, 'x', "Rejoin");
     } else if (message == "_file") {
         if (sendFile()) {
-            print("File was sent.", 5, 4);
+            print("File was sent.", 4, 4);
         } else {
-            print("File wasn't sent.", 5, 5);
+            print("File wasn't sent.", 4, 5);
         }
+        return true;
     } else if (message == "_save") {
-        Common::sendChunkedData(clientSocket, 's', "save");
-        print("", 4);
+        Common::sendChunkedData(clientSocket, 'r', "save");
+        return true;
     } else if (message == "   " || message == "stop" || !Common::sendChunkedData(clientSocket, 'm', message)) { // send
         Common::sendChunkedData(clientSocket, '-', message);
         std::cout << receiveMessage();
@@ -128,7 +130,7 @@ void Client::receiveMessages(State& state) {
                 Common::appendToFile(message);
                 break;
             case 's':
-                print("file downloaded.", 2, 4);
+                print("file downloaded.", 4, 4);
                 break;
             case 'h':
                 state = Messaging;

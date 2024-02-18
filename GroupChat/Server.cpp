@@ -127,11 +127,9 @@ void Server::receiveMessages(std::shared_ptr<User> user, std::shared_ptr<Room> r
             Common::createFile(message, path); // storing only the last sent file
             break;
         case 'a':
-            path = "serverFolder\\" + user->room;
             Common::appendToFile(message, path);
             break;
         case 'r':
-            path = "serverFolder\\" + user->room;
             message = Common::getFirstFile(path);
             if (message != "") {
                 *userMessage = Message(message, user->username, user->clientSocket, room, FileRequest);
@@ -139,7 +137,7 @@ void Server::receiveMessages(std::shared_ptr<User> user, std::shared_ptr<Room> r
             }
             break;
         case 's':
-            userMessage = std::make_shared<Message>(message, user->username, user->clientSocket, roomByString(user->room), File);
+            userMessage = std::make_shared<Message>(message, user->username, user->clientSocket, room, File);
             messenger.addMessageToQueue(userMessage);
             break;
         case 'x':

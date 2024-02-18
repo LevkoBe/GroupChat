@@ -8,7 +8,6 @@ void Messenger::broadcastMessage(const Message& message, std::mutex& consoleMute
 
     std::shared_ptr<Room> room = message.room;
     std::string folderpath;
-    std::string filename;
     switch (message.type) {
     case Text:
         room->messageHistory.push_back(message.toStr());
@@ -29,10 +28,9 @@ void Messenger::broadcastMessage(const Message& message, std::mutex& consoleMute
         break;
     case FileRequest:
         for (std::shared_ptr<User> user : room->users) {
-            if (user->clientSocket != message.senderSocket) {
+            if (user->clientSocket == message.senderSocket) {
                 folderpath = "serverFolder\\" + room->groupName;
-                filename = Common::getFirstFile(folderpath);
-                Common::sendFile(user->clientSocket, filename, folderpath);
+                Common::sendFile(user->clientSocket, message.message, folderpath);
             }
         }
         break;

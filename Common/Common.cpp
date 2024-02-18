@@ -112,7 +112,6 @@ bool Common::sendFile(SOCKET clientSocket, const std::string& filename, const st
         buffer[bytesRead] = '\0';
 
         if (bytesRead > 0) {
-            std::cout << "chunk " << indicator << std::endl;
             std::string message = filename + '\n' + buffer;
             sendChunkedData(clientSocket, indicator, message);
             indicator = 'a';
@@ -120,7 +119,6 @@ bool Common::sendFile(SOCKET clientSocket, const std::string& filename, const st
     }
     sendChunkedData(clientSocket, 's', filename);
     delete[] buffer;
-
     file.close();
     return true;
 }
@@ -147,7 +145,7 @@ bool Common::createFile(std::string& content, const std::string& pathAdd) {
 
     outputFile << fileContent;
     outputFile.close();
-
+    std::cout << "saved";///
     return true;
 }
 
