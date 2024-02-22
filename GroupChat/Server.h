@@ -1,6 +1,7 @@
 #pragma once
 
-#include <string> // ---
+#include <string>
+#include <mutex>
 #include "User.h"
 #include "Room.h"
 #include "Common.h"
@@ -35,6 +36,7 @@ public:
     std::vector<std::shared_ptr<Room>> rooms;
     std::mutex& consoleMutex;
     std::mutex roomsLock;
+    std::mutex clientsMutex;
     Messenger messenger;
 
     Server(std::mutex& consoleMutex);

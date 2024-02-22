@@ -1,17 +1,18 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include <cctype>
 #include <Ws2tcpip.h>
 #include "Common.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
 enum State {
-    Entering,
-    Disconnected,
-    AnswerRequired,
-    Messaging,
-    Waiting,
+    Messaging, // ok
+    Entering,       // registering
+    AnswerRequired, // for files
+    Waiting,        // waiting for registration
+    Disconnected,   // terminate app
 };
 
 class Client {
@@ -21,16 +22,15 @@ public:
     ~Client();
 
     // Q&A
-    bool answerQuestion(State& state);
+    //bool answerQuestion(std::atomic<State>& state);
 
     // 
-    bool enterGroup(State& state);
+    bool enterGroup(std::atomic<State>& state);
 
     // messaging
-    bool sendMessage();
+    bool sendMessage(std::atomic<State>& state);
 
-    void receiveMessages(State& state);
-    std::string receiveMessage();
+    void receiveMessages(std::atomic<State>& state);
 
     void receiveHistory();
 

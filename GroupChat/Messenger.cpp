@@ -22,7 +22,7 @@ void Messenger::broadcastMessage(const Message& message, std::mutex& consoleMute
         for (std::shared_ptr<User> user : room->users) {
             if (user->clientSocket != message.senderSocket) {
                 Common::sendChunkedData(user->clientSocket, 'm', message.toStr());
-                Common::sendChunkedData(user->clientSocket, '?', "Do you want to download ('save' if yes)?");
+                Common::sendChunkedData(user->clientSocket, '?', "Do you want to download the file (Y/N)?");
             }
         }
         break;

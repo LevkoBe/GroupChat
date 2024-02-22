@@ -5,7 +5,7 @@
 
 Client client;
 
-void receiveMessages(State& state) {
+void receiveMessages(std::atomic<State>& state) {
     client.receiveMessages(state);
 }
 
@@ -13,7 +13,7 @@ void receiveMessages(State& state) {
 int main() {
     SOCKET clientSocket = client.clientSocket;
     std::cout << "Connected to server.\n";
-    State state = Entering;
+    std::atomic<State> state = Entering;
 
     Common::receiveOptionType(clientSocket);
     std::cout << Common::receiveChunkedData(clientSocket) << std::endl;
@@ -25,11 +25,11 @@ int main() {
 
     std::thread receiveThread(receiveMessages, std::ref(state));
     while (state != Disconnected) {
-        if (state == Entering)
+        if (state == Waiting)
+            continue;
+        else if (state == Entering)
             client.enterGroup(state);
-        else if (state == AnswerRequired)
-            client.answerQuestion(state);
-        else if (!client.sendMessage())
+        else if (!client.sendMessage(state))
             state = Disconnected;
     }
 

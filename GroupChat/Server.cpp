@@ -38,7 +38,9 @@ Server::Server(std::mutex& consoleMutex) : consoleMutex(consoleMutex), messenger
 }
 
 void Server::handleClient(SOCKET clientSocket) {
+    clientsMutex.lock();
     clients.push_back(clientSocket);
+    clientsMutex.unlock();
 
     std::string username = askForUsername(clientSocket);
     std::shared_ptr<User> user = std::make_shared<User>(username, clientSocket);
@@ -154,7 +156,6 @@ void Server::receiveMessages(std::shared_ptr<User> user, std::shared_ptr<Room> r
             *userMessage = Message(message, user->username, user->clientSocket, room);
             messenger.addMessageToQueue(userMessage);
 
-            Common::sendChunkedData(user->clientSocket, '-', "Thank you for being with us!", 100);
             std::lock_guard<std::mutex> lock(consoleMutex);
             std::cout << "Client " << user->clientSocket << " disconnected.\n";
             closesocket(user->clientSocket);

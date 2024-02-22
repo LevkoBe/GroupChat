@@ -35,26 +35,14 @@ Client::~Client() {
     WSACleanup();
 }
 
-// Q&A
-bool Client::answerQuestion(State& state) {
-    //std::unique_lock<std::mutex> lock(recvLocker); /// systematic approach, but recv() will not be called anyway
-    std::string questionAnswer = Common::receiveChunkedData(clientSocket);
-    std::cout << questionAnswer << std::endl;
-    char option = 'm';
-    std::getline(std::cin, questionAnswer);
-    if (questionAnswer == "save") {
-        option = 'r'; // request to save the file
-    }
-    Common::sendChunkedData(clientSocket, option, questionAnswer);
-    answerRequired.notify_one();
-    state = Messaging;
-    print("", 4);
-    return true;
-}
-
-bool Client::enterGroup(State& state) {
-    Common::receiveOptionType(clientSocket);
-    std::cout << Common::receiveChunkedData(clientSocket) << std::endl;
+bool Client::enterGroup(std::atomic<State>& state) {
+    char mark;
+    std::string question;
+    do {
+        mark = Common::receiveOptionType(clientSocket);
+        question = Common::receiveChunkedData(clientSocket);
+    } while (mark != '?');
+    std::cout << question << std::endl;
     std::string groupName;
     std::getline(std::cin, groupName);
     if (!Common::sendChunkedData(clientSocket, '?', groupName)) return false;
@@ -75,7 +63,7 @@ bool Client::enterGroup(State& state) {
 
 // messaging
 
-bool Client::sendMessage() {
+bool Client::sendMessage(std::atomic<State>& state) {
     int numLines = 2;
     std::string message;
     do {
@@ -83,42 +71,58 @@ bool Client::sendMessage() {
         numLines++;
     } while (message == "");
 
+    if (state == AnswerRequired) {
+        if (std::tolower(message[0]) == 'y') {
+            Common::sendChunkedData(clientSocket, 'r', message);
+            state = Messaging;
+            print("responded 'SAVE'", 5, 4);
+        } else if (std::tolower(message[0] == 'n')) {
+            state = Messaging;
+            print("file wasn't saved", 5, 4);
+        } else {
+            print("Please, provide response 'Y'/'N': ", 4, 4); // todo: remove block of ---...
+        }
+        return true;
+    }
 
     if (message == "_exit") {
+        state = Waiting;
         Common::sendChunkedData(clientSocket, 'x', "Rejoin");
+        return true;
     } else if (message == "_file") {
         if (sendFile()) {
             print("File was sent.", 4, 4);
         } else {
-            print("File wasn't sent.", 4, 5);
+            print("File wasn't sent.", 3, 5);
         }
         return true;
     } else if (message == "_save") {
         Common::sendChunkedData(clientSocket, 'r', "save");
+        print("Request to download file was sent.", numLines, 3);
         return true;
-    } else if (message == "   " || message == "stop" || !Common::sendChunkedData(clientSocket, 'm', message)) { // send
+    } else if (message == "stop" || !Common::sendChunkedData(clientSocket, 'm', message)) { // send
         Common::sendChunkedData(clientSocket, '-', message);
-        std::cout << receiveMessage();
+        state = Disconnected;
         return false;
     }
     print("You: " + message, numLines, 1); // print
     return true;
 }
-void Client::receiveMessages(State& state) {
+void Client::receiveMessages(std::atomic<State>& state) {
     char option;
     std::string message;
     while (state != Disconnected) {
         {
             std::unique_lock<std::mutex> lock(recvLocker);
-            answerRequired.wait(lock, [ & ] { return (state == Messaging || state == Waiting); });
+            answerRequired.wait(lock, [ & ] { return (state != Entering); });
             option = Common::receiveOptionType(clientSocket);
-            if (option == '?') {
-                state = AnswerRequired;
-                continue;
-            }
             message = Common::receiveChunkedData(clientSocket);
         }
         switch (option) {
+            case '?':
+                print(message, 2, 4);
+                state = AnswerRequired;
+                break;
             case 'm':
                 print(message, 2, 3);
                 break;
@@ -130,7 +134,7 @@ void Client::receiveMessages(State& state) {
                 Common::appendToFile(message);
                 break;
             case 's':
-                print("file downloaded.", 4, 4);
+                print("file downloaded.", 3, 4);
                 break;
             case 'h':
                 state = Messaging;
@@ -145,12 +149,6 @@ void Client::receiveMessages(State& state) {
                 break; ///
         }
     }
-}
-
-std::string Client::receiveMessage() {
-    Common::receiveOptionType(clientSocket);
-    std::string message = Common::receiveChunkedData(clientSocket);
-    return message;
 }
 
 void Client::receiveHistory() {
@@ -170,7 +168,6 @@ bool Client::sendFile() {
     std::cout << "Enter file name you'd like to send: ";
     std::getline(std::cin, filename);
     if (Common::sendFile(clientSocket, filename)) {
-        Common::sendChunkedData(clientSocket, 'm', "FILE: " + filename);
         return true;
     }
     return false;
