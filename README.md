@@ -24,7 +24,9 @@ Each time we should send, as well as receive the next:
 
 **Message** is any amount of characters stored in char pointer type. That is the message with specified size, which is expected by the receiver.
 Here's a simple visualizations related to my program:
-![image](https://github.com/LevkoBe/GroupChat/assets/118983753/79357ddd-66d7-4a29-8999-9a9266601975)
+
+![image](https://github.com/LevkoBe/GroupChat/assets/118983753/f31d3f71-ad1f-494d-9f39-6c5a3be9beef) ![image](https://github.com/LevkoBe/GroupChat/assets/118983753/dadb8fb7-ab25-4326-a27f-ecb917373b4a)
+
 
 Here's a markdown table representing the commands exchanged between the server and the client that have place in my application:
 
@@ -316,6 +318,15 @@ void Messenger::broadcastMessage(const Message& message, std::mutex& consoleMute
 
 #### These are the main features I decided to present about my program. Everything else you can see in the code, as the repo is publicly available to everyone.
 
+### And, to showcase the work of the program, I'll present a few screenshots of its execution:
+
+![2024-02-23](https://github.com/LevkoBe/GroupChat/assets/118983753/998441c9-82be-4bdd-8aca-a97e596156a7)
+![2024-02-23 (1)](https://github.com/LevkoBe/GroupChat/assets/118983753/f9e2b710-cc20-48e2-ae1d-cf265e862feb)
+![2024-02-23 (2)](https://github.com/LevkoBe/GroupChat/assets/118983753/cd4d358b-f802-4ad1-866b-e6b8b52fd03c)
+![2024-02-23 (3)](https://github.com/LevkoBe/GroupChat/assets/118983753/158d3745-5a34-4c9b-b943-852ec4afa46a)
+![2024-02-23 (4)](https://github.com/LevkoBe/GroupChat/assets/118983753/caf89884-84bf-437a-ae0e-be8ad600fc50)
+![2024-02-23 (5)](https://github.com/LevkoBe/GroupChat/assets/118983753/ffaa83cf-e5f8-4d25-9c69-1ccb47f2448f)
+![2024-02-23 (6)](https://github.com/LevkoBe/GroupChat/assets/118983753/5fddfe22-63e1-4710-b932-95911c11b8b7)
 
 
 
