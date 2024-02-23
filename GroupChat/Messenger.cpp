@@ -8,36 +8,41 @@ void Messenger::broadcastMessage(const Message& message, std::mutex& consoleMute
 
     std::shared_ptr<Room> room = message.room;
     std::string folderpath;
-    switch (message.type) {
-    case Text:
-        room->messageHistory.push_back(message.toStr());
-        for (std::shared_ptr<User> user : room->users) {
-            if (user->clientSocket != message.senderSocket) {
-                Common::sendChunkedData(user->clientSocket, 'm', message.toStr());
-            }
+
+    {
+        std::scoped_lock<std::mutex> lock(room->roomLock); // to avoid accessing removed users
+
+        switch (message.type) {
+            case Text:
+                room->messageHistory.push_back(message.toStr());
+                for (std::shared_ptr<User> user : room->users) {
+                    if (user->clientSocket != message.senderSocket) {
+                        Common::sendChunkedData(user->clientSocket, 'm', message.toStr());
+                    }
+                }
+                break;
+            case File:
+                room->messageHistory.push_back(message.toStr());
+                for (std::shared_ptr<User> user : room->users) {
+                    if (user->clientSocket != message.senderSocket) {
+                        Common::sendChunkedData(user->clientSocket, 'm', message.toStr());
+                        Common::sendChunkedData(user->clientSocket, '?', "Do you want to download the file (Y/N)?");
+                    }
+                }
+                break;
+            case FileRequest:
+                for (std::shared_ptr<User> user : room->users) {
+                    if (user->clientSocket == message.senderSocket) {
+                        folderpath = "serverFolder\\" + room->groupName;
+                        Common::sendFile(user->clientSocket, message.message, folderpath);
+                    }
+                }
+                break;
+            default:
+                break;
         }
-        break;
-    case File:
-        room->messageHistory.push_back(message.toStr());
-        for (std::shared_ptr<User> user : room->users) {
-            if (user->clientSocket != message.senderSocket) {
-                Common::sendChunkedData(user->clientSocket, 'm', message.toStr());
-                Common::sendChunkedData(user->clientSocket, '?', "Do you want to download the file (Y/N)?");
-            }
-        }
-        break;
-    case FileRequest:
-        for (std::shared_ptr<User> user : room->users) {
-            if (user->clientSocket == message.senderSocket) {
-                folderpath = "serverFolder\\" + room->groupName;
-                Common::sendFile(user->clientSocket, message.message, folderpath);
-            }
-        }
-        break;
-    default:
-        break;
     }
-    std::lock_guard<std::mutex> lock(consoleMutex);
+    std::scoped_lock<std::mutex> lock(consoleMutex);
     std::cout << "Client " << message.sender << ": " << message << std::endl;
 }
 

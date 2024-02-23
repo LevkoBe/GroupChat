@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <mutex>
 #include "User.h"
 #include "Room.h"
 #include "Common.h"

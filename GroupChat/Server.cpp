@@ -156,6 +156,10 @@ void Server::receiveMessages(std::shared_ptr<User> user, std::shared_ptr<Room> r
             *userMessage = Message(message, user->username, user->clientSocket, room);
             messenger.addMessageToQueue(userMessage);
 
+            {
+                std::scoped_lock<std::mutex> lock(room->roomLock);
+                room->users.erase(std::remove(room->users.begin(), room->users.end(), user), room->users.end());
+            }
             std::lock_guard<std::mutex> lock(consoleMutex);
             std::cout << "Client " << user->clientSocket << " disconnected.\n";
             closesocket(user->clientSocket);
@@ -220,7 +224,10 @@ std::shared_ptr<Room> Server::newRoom(std::shared_ptr<User> user) {
     return room;
 }
 void Server::addUser(std::shared_ptr<User> user, std::shared_ptr<Room> room, SOCKET clientSocket) {
-    room->users.push_back(user);
+    {
+        std::scoped_lock<std::mutex> lock(room->roomLock);
+        room->users.push_back(user);
+    }
     user->room = room->groupName;
     user->state = InRoom;
 

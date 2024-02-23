@@ -1,5 +1,6 @@
 #pragma once
 #include "User.h"
+#include <mutex>
 #include <fstream>
 #include <sstream>
 #include <filesystem>
@@ -8,6 +9,7 @@
 namespace fs = std::filesystem;
 
 struct Room {
+    std::mutex roomLock;
     std::string password;
     std::string groupName;
     std::shared_ptr<User> admin = nullptr;

@@ -144,9 +144,10 @@ void Client::receiveMessages(std::atomic<State>& state) {
                 break;
             case '-':
             default:
+                state = Disconnected;
                 std::cerr << "Server disconnected.\n";
                 return;
-                break; ///
+                break;
         }
     }
 }
