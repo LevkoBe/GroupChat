@@ -321,12 +321,39 @@ void Messenger::broadcastMessage(const Message& message, std::mutex& consoleMute
 ### And, to showcase the work of the program, I'll present a few screenshots of its execution:
 
 ![2024-02-23](https://github.com/LevkoBe/GroupChat/assets/118983753/998441c9-82be-4bdd-8aca-a97e596156a7)
+> ### Creating a group "GroupChat L" with a password "password"
+
+---
+
 ![2024-02-23 (1)](https://github.com/LevkoBe/GroupChat/assets/118983753/f9e2b710-cc20-48e2-ae1d-cf265e862feb)
+> ### Sending messages to the group, exiting
+
+---
+
 ![2024-02-23 (2)](https://github.com/LevkoBe/GroupChat/assets/118983753/cd4d358b-f802-4ad1-866b-e6b8b52fd03c)
+> ### Entering two more users to the group, with password; receiving group history
+
+---
+
 ![2024-02-23 (3)](https://github.com/LevkoBe/GroupChat/assets/118983753/158d3745-5a34-4c9b-b943-852ec4afa46a)
+> ### Creating another group without password
+
+---
+
 ![2024-02-23 (4)](https://github.com/LevkoBe/GroupChat/assets/118983753/caf89884-84bf-437a-ae0e-be8ad600fc50)
+> ### Sending file, with rejecting to download it on the John's side
+
+---
+
 ![2024-02-23 (5)](https://github.com/LevkoBe/GroupChat/assets/118983753/ffaa83cf-e5f8-4d25-9c69-1ccb47f2448f)
+> ### Rejoining to the group "Michael's group"
+
+---
+
 ![2024-02-23 (6)](https://github.com/LevkoBe/GroupChat/assets/118983753/5fddfe22-63e1-4710-b932-95911c11b8b7)
+> ### Continuing of the messaging with 4 users in one room.
+
+---
 
 
 
